@@ -557,9 +557,24 @@ tr:hover td{background:rgba(255,255,255,.02)}
   background:var(--sf2);border-radius:8px;padding:9px 11px;border:1px solid var(--bd)}
 
 /* ══ ALERTAS DE DEMORA ═══════════════════════════════════════ */
-.alert-panel{background:rgba(240,82,82,.08);border:1.5px solid rgba(240,82,82,.4);
-  border-radius:var(--r);padding:13px 16px;margin-bottom:14px;display:none}
-.alert-panel.on{display:block}
+.exec-collapsible{
+  border-top:1px solid var(--bd);margin-top:10px;padding-top:8px;
+}
+.exec-coll-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;user-select:none;padding:4px 0;
+}
+.exec-coll-hd:hover .exec-coll-arrow{color:var(--tx2)}
+.exec-coll-arrow{
+  font-size:11px;color:var(--tx3);transition:transform .2s;flex-shrink:0;
+}
+.exec-coll-arrow.open{transform:rotate(90deg)}
+/* alert panel colapsable */
+.alert-panel{
+  background:rgba(240,82,82,.08);border:1.5px solid rgba(240,82,82,.4);
+  border-radius:var(--r);padding:13px 16px;margin-bottom:14px;
+}
+.alert-panel.on{display:block !important}
 .alert-title{font-size:11px;font-weight:800;color:var(--red);text-transform:uppercase;
   letter-spacing:.8px;margin-bottom:9px;display:flex;align-items:center;gap:6px}
 .alert-item{display:flex;align-items:center;gap:10px;
@@ -1037,22 +1052,47 @@ tr:hover td{background:rgba(255,255,255,.02)}
   </div>
 
   <!-- Alertas de demora -->
-  <div class="alert-panel" id="alert-panel">
-    <div class="alert-title">⚠️ Rutas sin cerrar — más de 90 minutos</div>
-    <div id="alert-list"></div>
+  <!-- Alertas de demora — colapsable -->
+  <div class="alert-panel" id="alert-panel" style="display:none">
+    <div class="alert-title" onclick="toggleAlerts()" style="cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px">
+      ⚠️ Rutas sin cerrar — más de 90 minutos
+      <span id="alert-arrow" style="margin-left:auto;font-size:12px;color:var(--red);transition:transform .2s">▾</span>
+    </div>
+    <div id="alert-body">
+      <div id="alert-list"></div>
+    </div>
   </div>
 
-  <!-- Resumen Ejecutivo del Día -->
+  <!-- Resumen del día — KPIs siempre visibles -->
   <div class="exec-summary" id="exec-summary">
     <div class="exec-title">
       <span>📊 Resumen del día</span>
       <span class="exec-date" id="exec-date"></span>
     </div>
+    <!-- KPIs — siempre visibles -->
     <div class="exec-kpis" id="exec-kpis"></div>
-    <div class="exec-sect">Por empresa</div>
-    <div class="exec-companies" id="exec-companies"></div>
-    <div class="exec-sect">Controladores activos hoy</div>
-    <div class="exec-ctrl-row" id="exec-ctrls"></div>
+
+    <!-- Por empresa — colapsable -->
+    <div class="exec-collapsible" id="exec-emp-wrap">
+      <div class="exec-coll-hd" onclick="toggleExecSect('emp')">
+        <span class="exec-sect" style="margin:0">Por empresa</span>
+        <span id="arrow-emp" class="exec-coll-arrow">▸</span>
+      </div>
+      <div id="exec-emp-body" style="display:none">
+        <div class="exec-companies" id="exec-companies" style="margin-bottom:0;margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- Controladores activos — colapsable -->
+    <div class="exec-collapsible" id="exec-ctrl-wrap">
+      <div class="exec-coll-hd" onclick="toggleExecSect('ctrl')">
+        <span class="exec-sect" style="margin:0">Controladores activos hoy</span>
+        <span id="arrow-ctrl" class="exec-coll-arrow">▸</span>
+      </div>
+      <div id="exec-ctrl-body" style="display:none">
+        <div class="exec-ctrl-row" id="exec-ctrls" style="margin-top:8px"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Control de Rutas del Día -->
@@ -2062,6 +2102,25 @@ function clearRouteFilter(){
 }
 
 /* -- Alertas de rutas abiertas más de 90 min -- */
+/* ══════════════ TOGGLE SECCIONES EJECUTIVO ══════════════════ */
+function toggleExecSect(sect){
+  const body  = document.getElementById('exec-'+sect+'-body');
+  const arrow = document.getElementById('arrow-'+sect);
+  if(!body||!arrow) return;
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  arrow.classList.toggle('open', open);
+}
+
+function toggleAlerts(){
+  const body  = document.getElementById('alert-body');
+  const arrow = document.getElementById('alert-arrow');
+  if(!body||!arrow) return;
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  arrow.textContent = open ? '▴' : '▾';
+}
+
 function checkOpenAlerts(allRecs){
   const panel=document.getElementById('alert-panel');
   const list=document.getElementById('alert-list');
@@ -2077,10 +2136,15 @@ function checkOpenAlerts(allRecs){
     return (nowMin-iniMin)>=90;
   });
   if(!open.length){
-    panel.classList.remove('on');
+    panel.style.display='none';
     return;
   }
-  panel.classList.add('on');
+  panel.style.display='block';
+  // Mostrar el cuerpo automáticamente cuando hay alertas
+  const alertBody = document.getElementById('alert-body');
+  if(alertBody) alertBody.style.display='block';
+  const alertArrow = document.getElementById('alert-arrow');
+  if(alertArrow) alertArrow.textContent='▴';
   list.innerHTML=open.map(r=>{
     const [h,m]=r.hora_ini.split(':').map(Number);
     const elapsed=nowMin-(h*60+m);
