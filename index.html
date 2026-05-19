@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -67,6 +68,15 @@ window.FB = {
   async loadCtrlMgmt(){
     const snap = await get(ref(db, 'config/controllers'));
     return snap.exists() ? snap.val() : [];
+  },
+  // Guardar lista de rutas del día
+  async saveRdcLista(data){
+    await set(ref(db, 'config/rdc_lista'), data);
+  },
+  // Cargar lista de rutas del día
+  async loadRdcLista(){
+    const snap = await get(ref(db, 'config/rdc_lista'));
+    return snap.exists() ? snap.val() : null;
   }
 };
 
@@ -736,7 +746,39 @@ tr:hover td{background:rgba(255,255,255,.02)}
 }
 .ctrl-toggle.active{border-color:rgba(22,163,74,.3);color:var(--grn);background:rgba(22,163,74,.05)}
 .ctrl-toggle.inactive{border-color:rgba(220,38,38,.3);color:var(--red);background:rgba(220,38,38,.05)}
-.sync-dot.offline{background:var(--red);animation:none}
+/* ══ CONTROL DE RUTAS DEL DÍA ════════════════════════════════ */
+.rdc-box{background:var(--sf);border:1.5px solid var(--bd2);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.rdc-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.rdc-title{font-size:10px;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:.9px}
+.rdc-stats{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.rdc-stat{font-size:11px;font-weight:700;padding:3px 10px;border-radius:4px}
+.rdc-stat.total{background:var(--sf2);color:var(--tx2);border:1px solid var(--bd)}
+.rdc-stat.cerradas{background:rgba(22,163,74,.1);color:var(--grn);border:1px solid rgba(22,163,74,.25)}
+.rdc-stat.pendientes{background:rgba(220,38,38,.1);color:var(--red);border:1px solid rgba(220,38,38,.25)}
+.rdc-input-row{display:flex;gap:8px;margin-bottom:10px;align-items:flex-start}
+.rdc-ta{flex:1;background:var(--sf2);border:1.5px solid var(--bd);border-radius:var(--rs);padding:10px 12px;font-size:13px;font-family:'JetBrains Mono',monospace;font-weight:500;color:var(--tx);outline:none;resize:none;transition:border-color .2s;min-height:70px;line-height:1.5}
+.rdc-ta:focus{border-color:var(--acc)}
+.rdc-ta::placeholder{font-size:12px;font-weight:400;color:var(--tx3);font-family:'Inter',sans-serif}
+.rdc-btns{display:flex;flex-direction:column;gap:6px}
+.rdc-btn{padding:9px 14px;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:none;transition:opacity .15s;white-space:nowrap}
+.rdc-btn.cargar{background:var(--acc);color:#fff}
+.rdc-btn.limpiar{background:var(--sf2);border:1px solid var(--bd);color:var(--tx3)}
+.rdc-btn:hover{opacity:.82}
+.rdc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.rdc-col-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px;display:flex;align-items:center;gap:5px}
+.rdc-col-title.pend{color:var(--red)}
+.rdc-col-title.done{color:var(--grn)}
+.rdc-list{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto}
+.rdc-item{display:flex;align-items:center;gap:7px;background:var(--sf2);border:1px solid var(--bd);border-radius:5px;padding:6px 9px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600}
+.rdc-item.pend{border-color:rgba(220,38,38,.2)}
+.rdc-item.done{border-color:rgba(22,163,74,.2);opacity:.65}
+.rdc-item .ruta-id{flex:1;color:var(--tx)}
+.rdc-item.done .ruta-id{color:var(--tx3);text-decoration:line-through}
+.rdc-close-btn{padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid rgba(220,38,38,.3);background:rgba(220,38,38,.07);color:var(--red);transition:opacity .15s}
+.rdc-close-btn:hover{opacity:.75}
+.rdc-check{color:var(--grn);font-size:11px;flex-shrink:0}
+.rdc-empty{font-size:12px;color:var(--tx3);padding:10px 0;text-align:center}
+/* ══ OFFLINE ══════════════════════════════════════════════════ */
 /* ══ DATE PICKER SUPERVISOR ══════════════════════════════════ */
 .date-filter-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .date-filter-row label{font-size:10px;font-weight:800;color:var(--tx2);
@@ -1011,6 +1053,41 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="exec-companies" id="exec-companies"></div>
     <div class="exec-sect">Controladores activos hoy</div>
     <div class="exec-ctrl-row" id="exec-ctrls"></div>
+  </div>
+
+  <!-- Control de Rutas del Día -->
+  <div class="rdc-box" id="rdc-box">
+    <div class="rdc-header" onclick="rdcToggle()" style="cursor:pointer;user-select:none">
+      <div class="rdc-title">📋 Control de rutas del día</div>
+      <div class="rdc-stats" id="rdc-stats" style="display:none">
+        <span class="rdc-stat total" id="rdc-total">0 total</span>
+        <span class="rdc-stat cerradas" id="rdc-cerradas">0 cerradas</span>
+        <span class="rdc-stat pendientes" id="rdc-pendientes">0 pendientes</span>
+      </div>
+      <span id="rdc-arrow" style="margin-left:auto;font-size:12px;color:var(--tx3);transition:transform .2s;flex-shrink:0">▸</span>
+    </div>
+    <div id="rdc-body" style="display:none">
+      <div class="rdc-input-row">
+        <textarea class="rdc-ta" id="rdc-input"
+          placeholder="Pegá el listado de ID rutas del día separadas por espacio o enter&#10;Ej: 334247 334248 334249 334250..."></textarea>
+        <div class="rdc-btns">
+          <button class="rdc-btn cargar" onclick="event.stopPropagation();rdcCargar()">Cargar</button>
+          <button class="rdc-btn limpiar" onclick="event.stopPropagation();rdcLimpiar()">Limpiar</button>
+        </div>
+      </div>
+      <div id="rdc-result" style="display:none">
+        <div class="rdc-grid">
+          <div>
+            <div class="rdc-col-title pend">⏳ Pendientes (<span id="rdc-n-pend">0</span>)</div>
+            <div class="rdc-list" id="rdc-list-pend"></div>
+          </div>
+          <div>
+            <div class="rdc-col-title done">✓ Cerradas (<span id="rdc-n-done">0</span>)</div>
+            <div class="rdc-list" id="rdc-list-done"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Period filter -->
@@ -1865,6 +1942,7 @@ const SUP_TABS=['reg','ctrl','rank','live'];
 
 function initSup(){
   renderProw();
+  rdcInit();
   const recs=loadRecs();
   lastHash=simpleHash(recs);
   refreshSup(recs);
@@ -1907,6 +1985,7 @@ function setSupTab(t){
 function refreshSup(recs){
   checkOpenAlerts(recs);
   renderExecSummary(recs);
+  rdcRender(recs); // actualizar control de rutas del día
   let fil;
   if(routeFilter){
     fil = recs.filter(r => String(r.id_ruta).trim() === routeFilter);
@@ -2665,6 +2744,158 @@ function supDeleteRecord(id, btn){
     refreshSup(newRecs);
   });
 }
+/* ══════════════ CONTROL DE RUTAS DEL DÍA ════════════════════ */
+const RDC_KEY = 'rdc_lista'; // localStorage: lista del día activa
+let rdcLista = []; // IDs cargadas por el supervisor
+let rdcManuales = new Set(); // IDs cerradas manualmente por el supervisor
+
+function rdcToggle(){
+  const body  = document.getElementById('rdc-body');
+  const arrow = document.getElementById('rdc-arrow');
+  const open  = body.style.display === 'none';
+  body.style.display  = open ? 'block' : 'none';
+  arrow.style.transform = open ? 'rotate(90deg)' : '';
+}
+
+// Guardar en localStorage Y Firebase
+async function rdcSaveLocal(){
+  const data = {
+    fecha: todayStr(),
+    ids: rdcLista,
+    manuales: [...rdcManuales]
+  };
+  localStorage.setItem(RDC_KEY, JSON.stringify(data));
+  // Sincronizar con Firebase
+  if(window.FB_READY){
+    try{
+      await window.FB.saveRdcLista(data);
+    }catch(e){ console.warn('Firebase RDC save:', e); }
+  }
+}
+
+// Cargar desde Firebase (tiene prioridad sobre localStorage)
+async function rdcInit(){
+  let saved = null;
+
+  // 1. Intentar cargar desde Firebase
+  if(window.FB_READY){
+    try{
+      saved = await window.FB.loadRdcLista();
+    }catch(e){ console.warn('Firebase RDC load:', e); }
+  }
+
+  // 2. Fallback: localStorage
+  if(!saved){
+    try{ saved = JSON.parse(localStorage.getItem(RDC_KEY)||'null'); }
+    catch(e){}
+  }
+
+  if(saved && saved.fecha === todayStr()){
+    rdcLista = saved.ids || [];
+    rdcManuales = new Set(saved.manuales || []);
+    // Actualizar localStorage con lo que vino de Firebase
+    localStorage.setItem(RDC_KEY, JSON.stringify(saved));
+    if(rdcLista.length){
+      document.getElementById('rdc-input').value = rdcLista.join(' ');
+      document.getElementById('rdc-body').style.display = 'block';
+      document.getElementById('rdc-arrow').style.transform = 'rotate(90deg)';
+      rdcRender(loadRecs());
+    }
+  } else {
+    // Nuevo día — limpiar
+    localStorage.removeItem(RDC_KEY);
+    if(window.FB_READY){
+      try{ await window.FB.saveRdcLista({fecha: todayStr(), ids:[], manuales:[]}); }catch(e){}
+    }
+  }
+}
+
+function rdcCargar(){
+  const raw = document.getElementById('rdc-input').value;
+  const ids = raw.split(/[\s,;\n]+/)
+    .map(s=>s.trim())
+    .filter(s=>s.length > 0 && /^\d+$/.test(s));
+
+  if(!ids.length){ toast('No se encontraron ID rutas válidas','er'); return; }
+
+  rdcLista = [...new Set(ids)];
+  rdcManuales = new Set();
+  rdcSaveLocal();
+  rdcRender(loadRecs());
+  toast(`${rdcLista.length} rutas cargadas ✓`,'ok');
+}
+
+function rdcLimpiar(){
+  rdcLista = [];
+  rdcManuales = new Set();
+  localStorage.removeItem(RDC_KEY);
+  if(window.FB_READY){
+    window.FB.saveRdcLista({fecha: todayStr(), ids:[], manuales:[]}).catch(e=>{});
+  }
+  document.getElementById('rdc-input').value = '';
+  document.getElementById('rdc-result').style.display = 'none';
+  document.getElementById('rdc-stats').style.display = 'none';
+  toast('Lista limpiada','in');
+}
+
+function rdcCerrarManual(id){
+  rdcManuales.add(String(id));
+  rdcSaveLocal();
+  rdcRender(loadRecs());
+}
+
+function rdcRender(allRecs){
+  if(!rdcLista.length) return;
+
+  // IDs cerradas por controladores (busca en TODO el historial, cualquier fecha)
+  const registradas = new Set(
+    allRecs
+      .filter(r => r.hora_ini && r.hora_fin) // solo rutas con inicio y fin
+      .map(r => String(r.id_ruta).trim())
+  );
+
+  const cerradas = [];
+  const pendientes = [];
+
+  rdcLista.forEach(id => {
+    if(registradas.has(String(id)) || rdcManuales.has(String(id))){
+      cerradas.push(id);
+    } else {
+      pendientes.push(id);
+    }
+  });
+
+  // Stats
+  document.getElementById('rdc-stats').style.display = 'flex';
+  document.getElementById('rdc-total').textContent = rdcLista.length + ' total';
+  document.getElementById('rdc-cerradas').textContent = cerradas.length + ' cerradas';
+  document.getElementById('rdc-pendientes').textContent = pendientes.length + ' pendientes';
+  document.getElementById('rdc-n-pend').textContent = pendientes.length;
+  document.getElementById('rdc-n-done').textContent = cerradas.length;
+
+  // Lista pendientes
+  const listPend = document.getElementById('rdc-list-pend');
+  listPend.innerHTML = pendientes.length
+    ? pendientes.map(id=>`
+        <div class="rdc-item pend">
+          <span class="ruta-id">${id}</span>
+          <button class="rdc-close-btn" onclick="rdcCerrarManual('${id}')">Cerrar</button>
+        </div>`).join('')
+    : '<div class="rdc-empty">✓ Todas cerradas</div>';
+
+  // Lista cerradas
+  const listDone = document.getElementById('rdc-list-done');
+  listDone.innerHTML = cerradas.length
+    ? cerradas.map(id=>`
+        <div class="rdc-item done">
+          <span class="rdc-check">✓</span>
+          <span class="ruta-id">${id}</span>
+        </div>`).join('')
+    : '<div class="rdc-empty">—</div>';
+
+  document.getElementById('rdc-result').style.display = 'block';
+}
+
 function openCompConfig(){
   document.getElementById('comp-overlay').classList.add('on');
   renderCompList();
