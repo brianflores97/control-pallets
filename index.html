@@ -1755,21 +1755,23 @@ function saveRecord(){
   if(!tIni){ toast('Marcá la hora de inicio antes de guardar','er'); return; }
   if(!tFin){ toast('Marcá la hora de fin antes de guardar','er'); return; }
 
-  // Validar que hora fin sea posterior a hora inicio (sin contar cruce de medianoche intencional)
-  const durCheck = calcMin(tIni, tFin);
-  if(durCheck !== null && durCheck > 24*60 - 30){
-    toast('Revisá los horarios — parecen incorrectos','er'); return;
-  }
+  // Validar horarios — permitir cruce de medianoche
   const [ih,im] = tIni.split(':').map(Number);
   const [fh,fm] = tFin.split(':').map(Number);
   const iniTotalMin = ih*60+im;
   const finTotalMin = fh*60+fm;
+
   if(finTotalMin === iniTotalMin){
     toast('La hora de fin no puede ser igual al inicio','er'); return;
   }
-  // Si fin < ini y la diferencia es grande (más de 12h), probablemente es un error
-  if(finTotalMin < iniTotalMin && (iniTotalMin - finTotalMin) > 12*60){
-    toast('Revisá los horarios — la diferencia es muy grande','er'); return;
+
+  // Calcular duración real considerando cruce de medianoche
+  let durReal = finTotalMin - iniTotalMin;
+  if(durReal < 0) durReal += 24*60; // cruce de medianoche
+
+  // Rechazar solo si la duración supera 12 horas (error de tipeo)
+  if(durReal > 12*60){
+    toast('La duración supera 12 horas — revisá los horarios','er'); return;
   }
 
   const existingRecs=loadRecs();
