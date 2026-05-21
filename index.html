@@ -756,11 +756,12 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .prep-remove:hover{color:var(--red)}
 .prep-sign{display:flex;border-radius:var(--rs);overflow:hidden;border:1px solid var(--bd);flex-shrink:0}
 .prep-sign-btn{
-  padding:9px 11px;font-size:13px;font-weight:700;cursor:pointer;
+  padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;
   border:none;font-family:inherit;transition:all .15s;background:var(--sf2);color:var(--tx3);
+  white-space:nowrap;
 }
-.prep-sign-btn.on.pos{background:rgba(22,163,74,.12);color:var(--grn)}
-.prep-sign-btn.on.neg{background:rgba(220,38,38,.1);color:var(--red)}
+.prep-sign-btn.on.pos{background:rgba(22,163,74,.15);color:var(--grn)}
+.prep-sign-btn.on.neg{background:rgba(220,38,38,.12);color:var(--red)}
 .prep-sign-btn:first-child{border-right:1px solid var(--bd)}
 .draft-banner{
   background:rgba(217,119,6,.07);border:1px solid rgba(217,119,6,.3);
@@ -1066,16 +1067,18 @@ tr:hover td{background:rgba(255,255,255,.02)}
   <!-- Preparadores -->
   <div class="fsec">
     <div class="fst">Preparadores <span class="obs-badge">OPCIONAL</span></div>
-    <div class="prep-hint">Nombre del preparador y diferencia de bultos (+ o −)</div>
-    <div class="prep-row">
+    <div class="prep-hint">Nombre del preparador y diferencia de bultos</div>
+    <div style="display:flex;gap:7px;margin-bottom:7px">
       <input class="prep-inp-name" id="prep-name" type="text" placeholder="Nombre del preparador"
-        onkeydown="if(event.key==='Enter')prepAdd()">
-      <input class="prep-inp-cant" id="prep-cant" type="number" placeholder="0" min="1"
-        inputmode="numeric" onkeydown="if(event.key==='Enter')prepAdd()">
+        autocomplete="off" onkeydown="if(event.key==='Enter')document.getElementById('prep-cant').focus()">
+    </div>
+    <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px">
       <div class="prep-sign">
-        <button class="prep-sign-btn pos on" id="prep-sign-pos" onclick="prepSetSign('+')">＋</button>
-        <button class="prep-sign-btn neg" id="prep-sign-neg" onclick="prepSetSign('−')">−</button>
+        <button class="prep-sign-btn pos on" id="prep-sign-pos" onclick="prepSetSign('+')">＋ Más</button>
+        <button class="prep-sign-btn neg" id="prep-sign-neg" onclick="prepSetSign('−')">− Menos</button>
       </div>
+      <input class="prep-inp-cant" id="prep-cant" type="number" placeholder="Cantidad" min="1"
+        inputmode="numeric" style="flex:1" onkeydown="if(event.key==='Enter')prepAdd()">
       <button class="prep-add-btn" onclick="prepAdd()">OK</button>
     </div>
     <div class="prep-list" id="prep-list"></div>
