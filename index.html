@@ -754,7 +754,14 @@ tr:hover td{background:rgba(255,255,255,.02)}
   transition:color .15s;line-height:1;
 }
 .prep-remove:hover{color:var(--red)}
-.prep-hint{font-size:11px;color:var(--tx3);margin-bottom:8px}
+.prep-sign{display:flex;border-radius:var(--rs);overflow:hidden;border:1px solid var(--bd);flex-shrink:0}
+.prep-sign-btn{
+  padding:9px 11px;font-size:13px;font-weight:700;cursor:pointer;
+  border:none;font-family:inherit;transition:all .15s;background:var(--sf2);color:var(--tx3);
+}
+.prep-sign-btn.on.pos{background:rgba(22,163,74,.12);color:var(--grn)}
+.prep-sign-btn.on.neg{background:rgba(220,38,38,.1);color:var(--red)}
+.prep-sign-btn:first-child{border-right:1px solid var(--bd)}
 .draft-banner{
   background:rgba(217,119,6,.07);border:1px solid rgba(217,119,6,.3);
   border-radius:var(--rs);padding:10px 13px;margin-bottom:10px;
@@ -1063,9 +1070,13 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="prep-row">
       <input class="prep-inp-name" id="prep-name" type="text" placeholder="Nombre del preparador"
         onkeydown="if(event.key==='Enter')prepAdd()">
-      <input class="prep-inp-cant" id="prep-cant" type="number" placeholder="+0"
+      <input class="prep-inp-cant" id="prep-cant" type="number" placeholder="0" min="1"
         inputmode="numeric" onkeydown="if(event.key==='Enter')prepAdd()">
-      <button class="prep-add-btn" onclick="prepAdd()">＋</button>
+      <div class="prep-sign">
+        <button class="prep-sign-btn pos on" id="prep-sign-pos" onclick="prepSetSign('+')">＋</button>
+        <button class="prep-sign-btn neg" id="prep-sign-neg" onclick="prepSetSign('−')">−</button>
+      </div>
+      <button class="prep-add-btn" onclick="prepAdd()">OK</button>
     </div>
     <div class="prep-list" id="prep-list"></div>
   </div>
@@ -2583,17 +2594,26 @@ function saveDraft(){
 }
 /* ══════════════ TAGS RÁPIDOS DE OBSERVACIONES ══════════════ */
 /* ══════════════ PREPARADORES ════════════════════════════════ */
-let prepList = []; // [{nombre, cantidad}]
+let prepList = [];
+let prepSign = '+'; // signo activo
+
+function prepSetSign(s){
+  prepSign = s;
+  document.getElementById('prep-sign-pos').classList.toggle('on', s==='+');
+  document.getElementById('prep-sign-neg').classList.toggle('on', s==='−');
+  document.getElementById('prep-cant').focus();
+}
 
 function prepAdd(){
   const nameEl = document.getElementById('prep-name');
   const cantEl = document.getElementById('prep-cant');
   const nombre = nameEl.value.trim();
-  const cantidad = parseInt(cantEl.value);
+  const abs    = parseInt(cantEl.value);
 
   if(!nombre){ toast('Escribí el nombre del preparador','er'); nameEl.focus(); return; }
-  if(isNaN(cantidad) || cantidad === 0){ toast('Ingresá una cantidad distinta de cero','er'); cantEl.focus(); return; }
+  if(isNaN(abs) || abs <= 0){ toast('Ingresá una cantidad mayor a cero','er'); cantEl.focus(); return; }
 
+  const cantidad = prepSign === '+' ? abs : -abs;
   prepList.push({nombre, cantidad});
   nameEl.value = '';
   cantEl.value = '';
@@ -2624,11 +2644,16 @@ function prepRender(){
 
 function prepReset(){
   prepList = [];
+  prepSign = '+';
   prepRender();
   const nameEl = document.getElementById('prep-name');
   const cantEl = document.getElementById('prep-cant');
   if(nameEl) nameEl.value='';
   if(cantEl) cantEl.value='';
+  const pos = document.getElementById('prep-sign-pos');
+  const neg = document.getElementById('prep-sign-neg');
+  if(pos){ pos.classList.add('on'); }
+  if(neg){ neg.classList.remove('on'); }
 }
 
 function toggleObsTag(btn, label){
