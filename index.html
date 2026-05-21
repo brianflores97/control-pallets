@@ -715,7 +715,46 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .exec-ctrl-n{font-size:10px;font-weight:800;color:var(--acc)}
 .exec-sect{font-size:9px;font-weight:800;color:var(--tx3);
   text-transform:uppercase;letter-spacing:.7px;margin:10px 0 6px}
-/* ══ BORRADOR AUTOGUARDADO ════════════════════════════════════ */
+/* ══ PREPARADORES ════════════════════════════════════════════ */
+.prep-row{display:flex;gap:7px;align-items:center;margin-bottom:7px}
+.prep-inp-name{
+  flex:2;background:var(--sf2);border:1px solid var(--bd);
+  border-radius:var(--rs);padding:9px 11px;font-size:13px;
+  color:var(--tx);font-family:inherit;outline:none;transition:border-color .2s;
+}
+.prep-inp-name:focus{border-color:var(--acc)}
+.prep-inp-cant{
+  flex:1;background:var(--sf2);border:1px solid var(--bd);
+  border-radius:var(--rs);padding:9px 11px;font-size:13px;
+  color:var(--tx);font-family:'JetBrains Mono',monospace;font-weight:600;
+  outline:none;transition:border-color .2s;text-align:center;min-width:0;
+}
+.prep-inp-cant:focus{border-color:var(--acc)}
+.prep-add-btn{
+  padding:9px 12px;background:var(--acc);border:none;border-radius:var(--rs);
+  font-size:13px;font-weight:700;color:#fff;cursor:pointer;
+  font-family:inherit;transition:opacity .15s;flex-shrink:0;
+}
+.prep-add-btn:hover{opacity:.85}
+.prep-list{display:flex;flex-direction:column;gap:5px;margin-top:2px}
+.prep-item{
+  display:flex;align-items:center;gap:10px;
+  background:var(--sf2);border:1px solid var(--bd);
+  border-radius:var(--rs);padding:8px 12px;
+}
+.prep-item-name{flex:1;font-size:13px;font-weight:500;color:var(--tx)}
+.prep-item-cant{
+  font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;
+}
+.prep-item-cant.pos{color:var(--grn)}
+.prep-item-cant.neg{color:var(--red)}
+.prep-remove{
+  background:none;border:none;cursor:pointer;
+  color:var(--tx3);font-size:14px;padding:0 2px;
+  transition:color .15s;line-height:1;
+}
+.prep-remove:hover{color:var(--red)}
+.prep-hint{font-size:11px;color:var(--tx3);margin-bottom:8px}
 .draft-banner{
   background:rgba(217,119,6,.07);border:1px solid rgba(217,119,6,.3);
   border-radius:var(--rs);padding:10px 13px;margin-bottom:10px;
@@ -1015,6 +1054,20 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div id="empresas-wrap">
       <!-- renderizado dinámicamente por renderEmpresasForm() -->
     </div>
+  </div>
+
+  <!-- Preparadores -->
+  <div class="fsec">
+    <div class="fst">Preparadores <span class="obs-badge">OPCIONAL</span></div>
+    <div class="prep-hint">Nombre del preparador y diferencia de bultos (+ o −)</div>
+    <div class="prep-row">
+      <input class="prep-inp-name" id="prep-name" type="text" placeholder="Nombre del preparador"
+        onkeydown="if(event.key==='Enter')prepAdd()">
+      <input class="prep-inp-cant" id="prep-cant" type="number" placeholder="+0"
+        inputmode="numeric" onkeydown="if(event.key==='Enter')prepAdd()">
+      <button class="prep-add-btn" onclick="prepAdd()">＋</button>
+    </div>
+    <div class="prep-list" id="prep-list"></div>
   </div>
 
   <!-- Observaciones -->
@@ -1691,6 +1744,11 @@ function goForm(id){
         document.getElementById('tb-fin').classList.add('set');
       }
       document.getElementById('inp-obs').value=r.obs||'';
+      // Cargar preparadores si existen
+      if(r.preparadores && r.preparadores.length){
+        prepList = [...r.preparadores];
+        prepRender();
+      }
       activeComps().forEach(c=>{
         const pv=r[c.key+'_pi']||0, sv=r[c.key+'_sa']||0;
         const piEl=document.getElementById('pi-'+c.key);
@@ -1759,6 +1817,7 @@ function resetForm(){
   document.getElementById('tb-fin').classList.remove('set');
   document.getElementById('inp-obs').value='';
   resetObsTags();
+  prepReset();
   renderEmpresasForm();
   resetBultos();
 }
@@ -1838,7 +1897,8 @@ function saveRecord(){
     id_ruta: ruta,
     hora_ini: tIni||'',
     hora_fin: tFin||'',
-    obs: (document.getElementById('inp-obs').value||'').trim()
+    obs: (document.getElementById('inp-obs').value||'').trim(),
+    preparadores: prepList.length ? [...prepList] : []
   };
   activeComps().forEach(c=>{
     rec[c.key+'_pi']=parseInt(document.getElementById('pi-'+c.key).value)||0;
@@ -2477,19 +2537,21 @@ function doExport(){
 
   const comps=loadCompanies();
   const compHeaders=comps.flatMap(c=>[`PI ${c.name}`,`SA ${c.name}`,`Bultos ${c.name}`]);
-  const header=['Fecha','ID Ruta','Controlador','Hora Inicio','Hora Fin','Duración (min)',...compHeaders,'Observaciones'];
+  const header=['Fecha','ID Ruta','Controlador','Hora Inicio','Hora Fin','Duración (min)',...compHeaders,'Observaciones','Preparadores'];
 
   const data=rows.map(r=>{
     const dur=calcMin(r.hora_ini,r.hora_fin);
     const compData=comps.flatMap(c=>[r[c.key+'_pi']||0, r[c.key+'_sa']||0, r[c.key+'_bultos']||0]);
-    return [r.fecha,r.id_ruta,r.ctrl,r.hora_ini||'',r.hora_fin||'',dur||'',...compData,r.obs||''];
+    // Formatear preparadores: "Flores +35 | García -10"
+    const preps = (r.preparadores||[]).map(p=>`${p.nombre} ${p.cantidad>0?'+':''}${p.cantidad}`).join(' | ');
+    return [r.fecha,r.id_ruta,r.ctrl,r.hora_ini||'',r.hora_fin||'',dur||'',...compData,r.obs||'',preps];
   });
 
   const baseCols=[12,10,18,10,10,14];
   const compCols=comps.flatMap(()=>[13,13,13]);
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet([header,...data]);
-  ws['!cols']=[...baseCols,...compCols,30].map(w=>({wch:w}));
+  ws['!cols']=[...baseCols,...compCols,30,35].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws,'Control Pallets');
   const label=routeFilter?`Ruta_${routeFilter}`:specificDate?specificDate.replace(/\//g,'-'):(supPeriod==='hoy'?todayStr().replace(/\//g,'-'):supPeriod);
   XLSX.writeFile(wb,`Control_Pallets_${label}.xlsx`);
@@ -2520,6 +2582,55 @@ function saveDraft(){
   try{ localStorage.setItem(DRAFT_KEY(),JSON.stringify(draft)); }catch(e){}
 }
 /* ══════════════ TAGS RÁPIDOS DE OBSERVACIONES ══════════════ */
+/* ══════════════ PREPARADORES ════════════════════════════════ */
+let prepList = []; // [{nombre, cantidad}]
+
+function prepAdd(){
+  const nameEl = document.getElementById('prep-name');
+  const cantEl = document.getElementById('prep-cant');
+  const nombre = nameEl.value.trim();
+  const cantidad = parseInt(cantEl.value);
+
+  if(!nombre){ toast('Escribí el nombre del preparador','er'); nameEl.focus(); return; }
+  if(isNaN(cantidad) || cantidad === 0){ toast('Ingresá una cantidad distinta de cero','er'); cantEl.focus(); return; }
+
+  prepList.push({nombre, cantidad});
+  nameEl.value = '';
+  cantEl.value = '';
+  nameEl.focus();
+  prepRender();
+  scheduleDraftSave();
+}
+
+function prepRemove(idx){
+  prepList.splice(idx, 1);
+  prepRender();
+  scheduleDraftSave();
+}
+
+function prepRender(){
+  const list = document.getElementById('prep-list');
+  if(!prepList.length){ list.innerHTML=''; return; }
+  list.innerHTML = prepList.map((p,i)=>{
+    const pos = p.cantidad > 0;
+    const label = pos ? `+${p.cantidad} bultos` : `${p.cantidad} bultos`;
+    return `<div class="prep-item">
+      <span class="prep-item-name">${p.nombre}</span>
+      <span class="prep-item-cant ${pos?'pos':'neg'}">${label}</span>
+      <button class="prep-remove" onclick="prepRemove(${i})" title="Quitar">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function prepReset(){
+  prepList = [];
+  prepRender();
+  const nameEl = document.getElementById('prep-name');
+  const cantEl = document.getElementById('prep-cant');
+  if(nameEl) nameEl.value='';
+  if(cantEl) cantEl.value='';
+}
+
 function toggleObsTag(btn, label){
   const ta   = document.getElementById('inp-obs');
   const isSel = btn.classList.toggle('sel');
