@@ -69,6 +69,13 @@ window.FB = {
     const snap = await get(ref(db, 'config/controllers'));
     return snap.exists() ? snap.val() : [];
   },
+  async savePreparers(list){
+    await set(ref(db, 'config/preparers'), list);
+  },
+  async loadPreparers(){
+    const snap = await get(ref(db, 'config/preparers'));
+    return snap.exists() ? snap.val() : [];
+  },
   // Guardar lista de rutas del día
   async saveRdcLista(data){
     await set(ref(db, 'config/rdc_lista'), data);
@@ -763,7 +770,42 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .prep-sign-btn.on.pos{background:rgba(22,163,74,.15);color:var(--grn)}
 .prep-sign-btn.on.neg{background:rgba(220,38,38,.12);color:var(--red)}
 .prep-sign-btn:first-child{border-right:1px solid var(--bd)}
-.draft-banner{
+/* ══ GESTIÓN PREPARADORES ════════════════════════════════════ */
+.prep-autocomplete{position:relative}
+.prep-suggestions{
+  position:absolute;top:100%;left:0;right:0;z-index:300;
+  background:var(--sf);border:1.5px solid var(--acc);
+  border-radius:0 0 var(--rs) var(--rs);
+  max-height:180px;overflow-y:auto;
+  box-shadow:var(--sh);display:none;
+}
+.prep-suggestions.on{display:block}
+.prep-sug-item{
+  padding:10px 13px;font-size:13px;cursor:pointer;
+  transition:background .1s;border-bottom:1px solid var(--bd);color:var(--tx);
+}
+.prep-sug-item:last-child{border:none}
+.prep-sug-item:hover,.prep-sug-item.sel{background:var(--acc-glow);color:var(--acc2)}
+#prep-mgmt-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(7,9,26,.96);backdrop-filter:blur(6px);
+  display:none;flex-direction:column;
+  animation:sli .28s ease;overflow-y:auto;
+}
+#prep-mgmt-overlay.on{display:flex}
+.prep-mgmt-item{
+  display:flex;align-items:center;gap:12px;
+  background:var(--sf);border:1.5px solid var(--bd);
+  border-radius:var(--rs);padding:12px 14px;margin-bottom:8px;
+}
+.prep-mgmt-name{flex:1;font-size:14px;font-weight:600;color:var(--tx)}
+.prep-mgmt-del{
+  padding:6px 10px;background:rgba(220,38,38,.08);
+  border:1px solid rgba(220,38,38,.3);border-radius:6px;
+  font-size:11px;font-weight:700;color:var(--red);
+  cursor:pointer;font-family:inherit;transition:all .2s;
+}
+.prep-mgmt-del:hover{background:rgba(220,38,38,.15)}
   background:rgba(217,119,6,.07);border:1px solid rgba(217,119,6,.3);
   border-radius:var(--rs);padding:10px 13px;margin-bottom:10px;
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
@@ -1068,9 +1110,13 @@ tr:hover td{background:rgba(255,255,255,.02)}
   <div class="fsec">
     <div class="fst">Preparadores <span class="obs-badge">OPCIONAL</span></div>
     <div class="prep-hint">Nombre del preparador y diferencia de bultos</div>
-    <div style="display:flex;gap:7px;margin-bottom:7px">
+    <div class="prep-autocomplete">
       <input class="prep-inp-name" id="prep-name" type="text" placeholder="Nombre del preparador"
-        autocomplete="off" onkeydown="if(event.key==='Enter')document.getElementById('prep-cant').focus()">
+        autocomplete="off"
+        oninput="prepSuggest(this.value)"
+        onkeydown="prepKeyNav(event)"
+        onblur="setTimeout(()=>prepHideSug(),200)">
+      <div class="prep-suggestions" id="prep-suggestions"></div>
     </div>
     <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px">
       <div class="prep-sign">
@@ -1114,6 +1160,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <h2>📊 Panel Supervisor</h2>
     <div class="sup-acts">
       <button class="bex" style="background:var(--sf2);border-color:var(--bd);color:var(--tx2)" onclick="openCompConfig()">⚙️ Empresas</button>
+      <button class="bex" style="background:var(--sf2);border-color:var(--bd);color:var(--tx2)" onclick="openPrepMgmt()">👷 Preparadores</button>
       <button class="bex primary" onclick="exportExcel()">⬇ Excel</button>
     </div>
   </div>
@@ -1298,6 +1345,25 @@ tr:hover td{background:rgba(255,255,255,.02)}
   </div>
 </div>
 
+<!-- ══ PREP MGMT OVERLAY ═══════════════════════════════════════ -->
+<div id="prep-mgmt-overlay">
+  <div class="prof-hd">
+    <div class="prof-back" onclick="closePrepMgmt()">←</div>
+    <h3>👷 Gestión de Preparadores</h3>
+  </div>
+  <div class="prof-body">
+    <div id="prep-mgmt-list"></div>
+    <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--bd)">
+      <div class="sh" style="margin-bottom:12px">Agregar preparador nuevo</div>
+      <div style="display:flex;gap:8px">
+        <input class="fi" id="new-prep-name" type="text" placeholder="Nombre completo"
+          onkeydown="if(event.key==='Enter')addPreparer()">
+        <button class="bp" style="width:auto;padding:10px 16px;white-space:nowrap" onclick="addPreparer()">＋ Agregar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ PROFILE OVERLAY ══════════════════════════════════════════ -->
 <div id="prof-overlay">
   <div class="prof-hd">
@@ -1325,6 +1391,7 @@ const POLL_MS   = 10000;
 const AV_COLORS = ['#4d8bff','#c084fc','#2dd4bf','#fb923c','#f472b6','#a3e635','#fbbf24','#e879f9'];
 const DRAFT_KEY  = ()=>`pallets_draft_${me||'_'}`;
 const CTRL_KEY   = 'pallets_ctrl_mgmt';
+const PREP_KEY   = 'pallets_preparadores';
 
 /* ── COMPANY CONFIG ─────────────────────────────────────── */
 const COMP_KEY = 'pallets_companies';
@@ -2059,6 +2126,7 @@ const SUP_TABS=['reg','ctrl','rank','live'];
 function initSup(){
   renderProw();
   rdcInit();
+  initPreparers();
   const recs=loadRecs();
   lastHash=simpleHash(recs);
   refreshSup(recs);
@@ -3099,6 +3167,132 @@ function rdcRender(allRecs){
     : '<div class="rdc-empty">—</div>';
 
   document.getElementById('rdc-result').style.display = 'block';
+}
+
+/* ══════════════ GESTIÓN DE PREPARADORES ═════════════════════ */
+function loadPreparers(){
+  try{
+    const s=JSON.parse(localStorage.getItem(PREP_KEY)||'[]');
+    return Array.isArray(s)?s:[];
+  }catch(e){ return []; }
+}
+function savePreparers(list){
+  localStorage.setItem(PREP_KEY,JSON.stringify(list));
+  // Sincronizar con Firebase
+  if(window.FB_READY){
+    window.FB.savePreparers(list).catch(e=>console.warn('FB savePreparers:',e));
+  }
+}
+async function initPreparers(){
+  if(window.FB_READY){
+    try{
+      const fbList = await window.FB.loadPreparers();
+      if(fbList && fbList.length){
+        localStorage.setItem(PREP_KEY,JSON.stringify(fbList));
+      }
+    }catch(e){}
+  }
+}
+
+function openPrepMgmt(){
+  document.getElementById('prep-mgmt-overlay').classList.add('on');
+  renderPrepMgmtList();
+}
+function closePrepMgmt(){
+  document.getElementById('prep-mgmt-overlay').classList.remove('on');
+}
+function renderPrepMgmtList(){
+  const list = loadPreparers();
+  const el = document.getElementById('prep-mgmt-list');
+  if(!list.length){
+    el.innerHTML='<div class="empty"><div class="ei">👷</div><p>No hay preparadores cargados aún</p></div>';
+    return;
+  }
+  el.innerHTML = '<div class="sh" style="margin-bottom:10px">Preparadores registrados</div>' +
+    list.map((n,i)=>`
+      <div class="prep-mgmt-item">
+        <span class="prep-mgmt-name">${n}</span>
+        <button class="prep-mgmt-del" onclick="removePreparer(${i})">✕ Quitar</button>
+      </div>`).join('');
+}
+function addPreparer(){
+  const el = document.getElementById('new-prep-name');
+  const name = el.value.trim();
+  if(!name){ toast('Ingresá el nombre','er'); el.focus(); return; }
+  const list = loadPreparers();
+  if(list.some(n=>n.toLowerCase()===name.toLowerCase())){
+    toast('Ya existe ese preparador','er'); return;
+  }
+  list.push(name);
+  list.sort((a,b)=>a.localeCompare(b));
+  savePreparers(list);
+  el.value='';
+  el.focus();
+  toast(`"${name}" agregado ✓`,'ok');
+  renderPrepMgmtList();
+}
+function removePreparer(i){
+  const list = loadPreparers();
+  const name = list[i];
+  list.splice(i,1);
+  savePreparers(list);
+  toast(`"${name}" eliminado`,'in');
+  renderPrepMgmtList();
+}
+
+/* ── Autocompletado en el formulario del controlador ── */
+let sugIdx = -1;
+
+function prepSuggest(val){
+  const sug = document.getElementById('prep-suggestions');
+  if(!val||val.length<1){ sug.classList.remove('on'); sug.innerHTML=''; sugIdx=-1; return; }
+  const list = loadPreparers();
+  const matches = list.filter(n=>n.toLowerCase().startsWith(val.toLowerCase()));
+  if(!matches.length){ sug.classList.remove('on'); sug.innerHTML=''; sugIdx=-1; return; }
+  sugIdx=-1;
+  sug.innerHTML = matches.map((n,i)=>
+    `<div class="prep-sug-item" data-name="${n}" onclick="prepSelectSug('${n.replace(/'/g,"\\'")}')">
+      <b>${n.substring(0,val.length)}</b>${n.substring(val.length)}
+    </div>`
+  ).join('');
+  sug.classList.add('on');
+}
+
+function prepSelectSug(name){
+  document.getElementById('prep-name').value = name;
+  prepHideSug();
+  document.getElementById('prep-cant').focus();
+}
+
+function prepHideSug(){
+  const sug = document.getElementById('prep-suggestions');
+  sug.classList.remove('on');
+  sugIdx=-1;
+}
+
+function prepKeyNav(e){
+  const sug = document.getElementById('prep-suggestions');
+  const items = sug.querySelectorAll('.prep-sug-item');
+  if(!items.length) return;
+  if(e.key==='ArrowDown'){
+    e.preventDefault();
+    sugIdx=Math.min(sugIdx+1, items.length-1);
+    items.forEach((el,i)=>el.classList.toggle('sel',i===sugIdx));
+  } else if(e.key==='ArrowUp'){
+    e.preventDefault();
+    sugIdx=Math.max(sugIdx-1,0);
+    items.forEach((el,i)=>el.classList.toggle('sel',i===sugIdx));
+  } else if(e.key==='Enter'){
+    if(sugIdx>=0 && items[sugIdx]){
+      e.preventDefault();
+      prepSelectSug(items[sugIdx].dataset.name);
+    } else {
+      prepHideSug();
+      document.getElementById('prep-cant').focus();
+    }
+  } else if(e.key==='Escape'){
+    prepHideSug();
+  }
 }
 
 function openCompConfig(){
