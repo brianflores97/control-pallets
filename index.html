@@ -1057,8 +1057,13 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="sc2"><div class="sv" id="st-sa">0</div><div class="sl">Total SA</div></div>
   </div>
   <button class="btn-new" onclick="goForm(null)">＋ Nueva ID Ruta</button>
-  <div class="sh">Mis registros de hoy</div>
-  <div class="rl" id="rec-list"></div>
+  <div class="sh" style="cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between" onclick="toggleRecList()">
+    <span>Mis registros de hoy</span>
+    <span id="rec-list-arrow" style="font-size:12px;color:var(--tx3);transition:transform .2s">▸</span>
+  </div>
+  <div id="rec-list-wrap" style="display:none">
+    <div class="rl" id="rec-list"></div>
+  </div>
 </div>
 </div>
 
@@ -1762,6 +1767,14 @@ function logout(){
 }
 
 /* ══════════════ CONTROLLER DASHBOARD ══════════════════ */
+function toggleRecList(){
+  const wrap  = document.getElementById('rec-list-wrap');
+  const arrow = document.getElementById('rec-list-arrow');
+  const open  = wrap.style.display === 'none';
+  wrap.style.display  = open ? 'block' : 'none';
+  arrow.style.transform = open ? 'rotate(90deg)' : '';
+}
+
 function refreshDash(recs){
   const hoy=todayStr();
   document.getElementById('d-fecha').textContent=hoy;
@@ -1778,7 +1791,13 @@ function refreshDash(recs){
     list.innerHTML='<div class="empty"><div class="ei">📋</div><p>Aún no hay registros hoy</p></div>';
     return;
   }
-  // Sort ascending by ID Ruta
+  // Abrir automáticamente si hay registros
+  const wrap  = document.getElementById('rec-list-wrap');
+  const arrow = document.getElementById('rec-list-arrow');
+  if(wrap && wrap.style.display==='none'){
+    wrap.style.display='block';
+    if(arrow) arrow.style.transform='rotate(90deg)';
+  }
   const sorted=[...mis].sort((a,b)=>Number(a.id_ruta)-Number(b.id_ruta)||a.id_ruta.localeCompare(b.id_ruta));
   list.innerHTML=sorted.map(r=>{
     const chips=loadCompanies().filter(c=>r[c.key+'_pi']||r[c.key+'_sa']||r[c.key+'_bultos'])
@@ -1905,12 +1924,14 @@ function resetForm(){
 function markTime(w){
   const t=nowTime();
   if(w==='ini'){
+    if(!confirm(`¿Iniciás el control ahora?\n${t}`)) return;
     tIni=t;
     document.getElementById('tv-ini').textContent=t;
     document.getElementById('btn-ini').disabled=true;
     document.getElementById('btn-fin').disabled=false;
     document.getElementById('tb-ini').classList.add('set');
   } else {
+    if(!confirm(`¿Cerrás el control ahora?\n${t}`)) return;
     tFin=t;
     document.getElementById('tv-fin').textContent=t;
     document.getElementById('btn-fin').disabled=true;
@@ -1957,18 +1978,6 @@ function saveRecord(){
   const existingRecs=loadRecs();
   const existing=existingRecs.find(r=>r.id===editId);
 
-  // Validar duplicado: misma ruta, mismo controlador, mismo día (excluyendo el registro actual en edición)
-  const fechaDelRegistro = existing?.fecha || todayStr();
-  const duplicado = existingRecs.find(r=>
-    r.id !== (editId||null) &&
-    r.ctrl === me &&
-    r.fecha === fechaDelRegistro &&
-    String(r.id_ruta).trim() === String(ruta).trim()
-  );
-  if(duplicado){
-    toast(`La ruta ${ruta} ya está cargada hoy — revisá la lista`, 'er');
-    return;
-  }
   const rec={
     id: editId||uid(),
     ts: existing?.ts||Date.now(),
