@@ -411,6 +411,13 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 /* Table */
 .tw{overflow-x:auto;border:1px solid var(--bd);border-radius:var(--rs);
   background:var(--sf)}
+.tw-scroll{
+  max-height:280px; /* aprox 6 filas */
+  overflow-y:auto;
+  overflow-x:auto;
+}
+/* Sticky header dentro del scroll */
+.tw-scroll thead tr{position:sticky;top:0;z-index:10;background:var(--sf2)}
 table{width:100%;border-collapse:collapse;font-size:11px}
 thead tr{background:var(--sf2)}
 th{padding:8px 10px;text-align:left;font-weight:600;color:var(--tx3);
@@ -1299,10 +1306,12 @@ tr:hover td{background:rgba(255,255,255,.02)}
   <!-- TAB: Registros -->
   <div id="tab-reg">
     <div class="tw">
-      <table>
-        <thead id="sup-thead"></thead>
-        <tbody id="sup-tbody"></tbody>
-      </table>
+      <div class="tw-scroll">
+        <table>
+          <thead id="sup-thead"></thead>
+          <tbody id="sup-tbody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
