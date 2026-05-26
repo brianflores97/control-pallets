@@ -600,7 +600,22 @@ tr:hover td{background:rgba(255,255,255,.02)}
   background:rgba(240,82,82,.12);color:var(--red);border-radius:5px;padding:2px 7px}
 .alert-time{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:13px;
   font-weight:700;color:var(--red)}
-/* ══ OBSERVACIONES ════════════════════════════════════════════ */
+/* ══ BLOQUEO SIN HORA INICIO ═════════════════════════════════ */
+.sec-locked{
+  position:relative;pointer-events:none;
+}
+.sec-locked::after{
+  content:'';position:absolute;inset:0;
+  background:rgba(15,15,16,.6);border-radius:var(--rs);
+  backdrop-filter:blur(2px);z-index:10;
+}
+.lock-msg{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:11;font-size:12px;font-weight:700;color:var(--tx2);
+  background:var(--sf);border:1px solid var(--bd);border-radius:6px;
+  padding:7px 14px;white-space:nowrap;pointer-events:none;
+}
+.fsec.locked-wrap{position:relative}
 .obs-ta{width:100%;background:var(--sf2);border:1.5px solid var(--bd);
   border-radius:var(--rs);padding:12px 14px;font-size:14px;
   color:var(--tx);font-family:inherit;outline:none;transition:border-color .2s;
@@ -1111,51 +1126,56 @@ tr:hover td{background:rgba(255,255,255,.02)}
   </div>
 
   <!-- Empresas -->
-  <div class="fsec">
+  <div class="fsec locked-wrap" id="sec-empresas">
     <div class="fst">Pallets por empresa</div>
-    <div id="empresas-wrap">
-      <!-- renderizado dinámicamente por renderEmpresasForm() -->
+    <div id="sec-lock-empresas" class="lock-msg" style="display:none">🔒 Marcá la hora de inicio primero</div>
+    <div id="empresas-inner" class="sec-locked">
+      <div id="empresas-wrap"></div>
     </div>
   </div>
 
   <!-- Preparadores -->
-  <div class="fsec">
+  <div class="fsec locked-wrap">
     <div class="fst">Preparadores <span class="obs-badge">OPCIONAL</span></div>
-    <div class="prep-hint">Nombre del preparador y diferencia de bultos</div>
-    <div class="prep-autocomplete">
-      <input class="prep-inp-name" id="prep-name" type="text" placeholder="Nombre del preparador"
-        autocomplete="off"
-        oninput="prepSuggest(this.value)"
-        onkeydown="prepKeyNav(event)"
-        onblur="setTimeout(()=>prepHideSug(),200)">
-      <div class="prep-suggestions" id="prep-suggestions"></div>
-    </div>
-    <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px">
-      <div class="prep-sign">
-        <button class="prep-sign-btn pos on" id="prep-sign-pos" onclick="prepSetSign('+')">＋ Más</button>
-        <button class="prep-sign-btn neg" id="prep-sign-neg" onclick="prepSetSign('−')">− Menos</button>
+    <div id="prep-inner" class="sec-locked">
+      <div class="prep-hint">Nombre del preparador y diferencia de bultos</div>
+      <div class="prep-autocomplete">
+        <input class="prep-inp-name" id="prep-name" type="text" placeholder="Nombre del preparador"
+          autocomplete="off"
+          oninput="prepSuggest(this.value)"
+          onkeydown="prepKeyNav(event)"
+          onblur="setTimeout(()=>prepHideSug(),200)">
+        <div class="prep-suggestions" id="prep-suggestions"></div>
       </div>
-      <input class="prep-inp-cant" id="prep-cant" type="number" placeholder="Cantidad" min="1"
-        inputmode="numeric" style="flex:1" onkeydown="if(event.key==='Enter')prepAdd()">
-      <button class="prep-add-btn" onclick="prepAdd()">OK</button>
+      <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px">
+        <div class="prep-sign">
+          <button class="prep-sign-btn pos on" id="prep-sign-pos" onclick="prepSetSign('+')">＋ Más</button>
+          <button class="prep-sign-btn neg" id="prep-sign-neg" onclick="prepSetSign('−')">− Menos</button>
+        </div>
+        <input class="prep-inp-cant" id="prep-cant" type="number" placeholder="Cantidad" min="1"
+          inputmode="numeric" style="flex:1" onkeydown="if(event.key==='Enter')prepAdd()">
+        <button class="prep-add-btn" onclick="prepAdd()">OK</button>
+      </div>
+      <div class="prep-list" id="prep-list"></div>
     </div>
-    <div class="prep-list" id="prep-list"></div>
   </div>
 
   <!-- Observaciones -->
-  <div class="fsec">
+  <div class="fsec locked-wrap">
     <div class="fst">Observaciones <span class="obs-badge">OPCIONAL</span></div>
-    <div class="obs-tags" id="obs-tags">
-      <button class="obs-tag" onclick="toggleObsTag(this,'Faltaban bultos')">📦 Faltaban bultos</button>
-      <button class="obs-tag" onclick="toggleObsTag(this,'Restaban bultos')">📦 Restaban bultos</button>
-      <button class="obs-tag" onclick="toggleObsTag(this,'Pallets mal cartelizados')">🏷 Mal cartelizados</button>
-      <button class="obs-tag" onclick="toggleObsTag(this,'Pallets mezclados')">🔀 Pallets mezclados</button>
-      <button class="obs-tag" onclick="toggleObsTag(this,'Pallet roto')">⚠ Pallet roto</button>
-      <button class="obs-tag" onclick="toggleObsTag(this,'Diferencia en conteo')">🔢 Diferencia en conteo</button>
-      <button class="obs-tag" onclick="toggleObsTag(this,'Sin acceso a ruta')">🚫 Sin acceso a ruta</button>
-      <button class="obs-tag" onclick="toggleObsTag(this,'Mercadería mojada')">💧 Mercadería mojada</button>
+    <div id="obs-inner" class="sec-locked">
+      <div class="obs-tags" id="obs-tags">
+        <button class="obs-tag" onclick="toggleObsTag(this,'Faltaban bultos')">📦 Faltaban bultos</button>
+        <button class="obs-tag" onclick="toggleObsTag(this,'Restaban bultos')">📦 Restaban bultos</button>
+        <button class="obs-tag" onclick="toggleObsTag(this,'Pallets mal cartelizados')">🏷 Mal cartelizados</button>
+        <button class="obs-tag" onclick="toggleObsTag(this,'Pallets mezclados')">🔀 Pallets mezclados</button>
+        <button class="obs-tag" onclick="toggleObsTag(this,'Pallet roto')">⚠ Pallet roto</button>
+        <button class="obs-tag" onclick="toggleObsTag(this,'Diferencia en conteo')">🔢 Diferencia en conteo</button>
+        <button class="obs-tag" onclick="toggleObsTag(this,'Sin acceso a ruta')">🚫 Sin acceso a ruta</button>
+        <button class="obs-tag" onclick="toggleObsTag(this,'Mercadería mojada')">💧 Mercadería mojada</button>
+      </div>
+      <textarea class="obs-ta" id="inp-obs" placeholder="O escribí una observación personalizada..." rows="3"></textarea>
     </div>
-    <textarea class="obs-ta" id="inp-obs" placeholder="O escribí una observación personalizada..." rows="3"></textarea>
   </div>
 
   <div class="fac">
@@ -1845,6 +1865,7 @@ function goForm(id){
         document.getElementById('btn-ini').disabled=true;
         document.getElementById('btn-fin').disabled=false;
         document.getElementById('tb-ini').classList.add('set');
+        updateFormLock(); // desbloquear porque ya tiene inicio
       }
       if(r.hora_fin){
         tFin=r.hora_fin;
@@ -1929,7 +1950,19 @@ function resetForm(){
   prepReset();
   renderEmpresasForm();
   resetBultos();
+  updateFormLock(); // bloquear secciones hasta que se marque inicio
 }
+function updateFormLock(){
+  const locked = !tIni;
+  const ids = ['empresas-inner','prep-inner','obs-inner'];
+  ids.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    if(locked) el.classList.add('sec-locked');
+    else el.classList.remove('sec-locked');
+  });
+}
+
 function markTime(w){
   const t=nowTime();
   if(w==='ini'){
@@ -1939,6 +1972,7 @@ function markTime(w){
     document.getElementById('btn-ini').disabled=true;
     document.getElementById('btn-fin').disabled=false;
     document.getElementById('tb-ini').classList.add('set');
+    updateFormLock(); // desbloquear secciones
   } else {
     if(!confirm(`¿Cerrás el control ahora?\n${t}`)) return;
     tFin=t;
