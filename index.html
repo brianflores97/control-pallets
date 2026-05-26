@@ -87,6 +87,27 @@ window.FB = {
   }
 };
 
+// Auth
+window.FB_AUTH = {
+  async loginSupervisor(email, password){
+    const { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } =
+      await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+    const auth = getAuth(fbApp);
+    window._fbAuth = auth;
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    return cred.user;
+  },
+  async logout(){
+    if(window._fbAuth){
+      const { signOut } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+      await signOut(window._fbAuth);
+    }
+  },
+  getCurrentUser(){
+    return window._fbAuth ? window._fbAuth.currentUser : null;
+  }
+};
+
 // Señal de que Firebase está listo
 window.FB_READY = true;
 window.dispatchEvent(new Event('fb-ready'));
@@ -1057,11 +1078,17 @@ tr:hover td{background:rgba(255,255,255,.02)}
   <!-- Supervisor -->
   <div id="tab-sup" style="display:none">
     <div class="fg">
-      <label class="fl">Contraseña supervisor</label>
+      <label class="fl">Email</label>
+      <input class="fi" id="inp-email" type="email" placeholder="supervisor@ejemplo.com"
+        autocomplete="email" onkeydown="if(event.key==='Enter')document.getElementById('inp-pass').focus()">
+    </div>
+    <div class="fg">
+      <label class="fl">Contraseña</label>
       <input class="fi" id="inp-pass" type="password" placeholder="••••••"
         onkeydown="if(event.key==='Enter')loginSup()">
     </div>
-    <button class="bp" onclick="loginSup()">Acceder →</button>
+    <div id="sup-login-err" style="display:none;font-size:12px;color:var(--red);margin-bottom:10px;font-weight:600"></div>
+    <button class="bp" id="btn-login-sup" onclick="loginSup()">Acceder →</button>
   </div>
 </div></div>
 </div>
@@ -1419,7 +1446,6 @@ tr:hover td{background:rgba(255,255,255,.02)}
 <!-- ══ JS ══════════════════════════════════════════════════════ -->
 <script>
 /* ── CONSTANTS ─────────────────────────────────────────── */
-const SUP_PASS  = 'super2024';
 const STOR_KEY  = 'pallets_v3';
 const POLL_MS   = 10000;
 const AV_COLORS = ['#4d8bff','#c084fc','#2dd4bf','#fb923c','#f472b6','#a3e635','#fbbf24','#e879f9'];
@@ -1756,15 +1782,36 @@ function loginNew(){
   setSavedName(n);
   enterAsCtrl(n);
 }
-function loginSup(){
-  const p=document.getElementById('inp-pass').value;
-  if(p!==SUP_PASS){ toast('Contraseña incorrecta','er'); return; }
-  me='Supervisor'; role='supervisor';
-  setSession({me,role});
-  showTopbar();
-  document.getElementById('tb-name').textContent='👔 Supervisor';
-  showSc('sup');
-  initSup();
+async function loginSup(){
+  const email = (document.getElementById('inp-email').value||'').trim();
+  const pass  = document.getElementById('inp-pass').value;
+  const errEl = document.getElementById('sup-login-err');
+  const btn   = document.getElementById('btn-login-sup');
+
+  if(!email){ toast('Ingresá tu email','er'); return; }
+  if(!pass) { toast('Ingresá tu contraseña','er'); return; }
+
+  btn.textContent = 'Verificando...';
+  btn.disabled = true;
+  errEl.style.display = 'none';
+
+  try {
+    if(window.FB_AUTH){
+      await window.FB_AUTH.loginSupervisor(email, pass);
+    }
+    me='Supervisor'; role='supervisor';
+    setSession({me, role, email});
+    showTopbar();
+    document.getElementById('tb-name').textContent='👔 Supervisor';
+    showSc('sup');
+    initSup();
+  } catch(e) {
+    errEl.textContent = 'Email o contraseña incorrectos';
+    errEl.style.display = 'block';
+  } finally {
+    btn.textContent = 'Acceder →';
+    btn.disabled = false;
+  }
 }
 function enterAsCtrl(n){
   if(!isCtrlActive(n)){
@@ -1788,8 +1835,12 @@ function showTopbar(){
 function logout(){
   stopPoll(); me=null; role=null; editId=null;
   clearSession();
+  // Cerrar sesión en Firebase Auth si es supervisor
+  if(window.FB_AUTH) window.FB_AUTH.logout().catch(()=>{});
   document.getElementById('topbar').style.display='none';
   document.getElementById('inp-pass').value='';
+  const emailEl = document.getElementById('inp-email');
+  if(emailEl) emailEl.value='';
   setLTab('ctrl');
   showSc('login');
   initLogin();
