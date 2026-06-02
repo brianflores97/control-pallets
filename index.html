@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -509,6 +510,13 @@ tr:hover td{background:rgba(255,255,255,.02)}
   font-family:inherit;white-space:nowrap;transition:all .2s;color:var(--tx2)}
 .comp-toggle-btn.active{border-color:var(--grn);color:var(--grn)}
 .comp-toggle-btn.inactive{border-color:var(--red);color:var(--red)}
+.comp-del-btn{
+  padding:7px 9px;background:rgba(220,38,38,.08);
+  border:1.5px solid rgba(220,38,38,.3);border-radius:8px;
+  font-size:13px;cursor:pointer;font-family:inherit;
+  transition:all .2s;color:var(--red);flex-shrink:0;
+}
+.comp-del-btn:hover{background:rgba(220,38,38,.18)}
 .color-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;
   border:2px solid transparent;transition:transform .15s,border-color .15s;flex-shrink:0}
 .color-swatch.sel{border-color:#fff;transform:scale(1.2)}
@@ -2418,13 +2426,13 @@ function clearSupSearch(){
 }
 
 function renderTableHeader(){
-  const comps=loadCompanies();
+  const comps=loadCompanies().filter(c=>c.active);
   const thead=document.getElementById('sup-thead');
   if(!thead) return;
   const compCols=comps.map(c=>
-    `<th style="color:${c.color};opacity:${c.active?1:.5}">PI ${c.name}</th>
-     <th style="color:${c.color};opacity:${c.active?1:.5}">SA ${c.name}</th>
-     <th style="color:${c.color};opacity:${c.active?1:.5}">Bultos ${c.name}</th>`
+    `<th style="color:${c.color}">PI ${c.name}</th>
+     <th style="color:${c.color}">SA ${c.name}</th>
+     <th style="color:${c.color}">Bultos ${c.name}</th>`
   ).join('');
   thead.innerHTML=`<tr><th>Fecha</th><th>ID Ruta</th><th>Controlador</th>
     <th>Inicio</th><th>Fin</th><th>Duración</th>${compCols}<th>Observaciones</th><th>Acciones</th></tr>`;
@@ -2433,7 +2441,8 @@ function renderTableHeader(){
 function renderTable(rows){
   renderTableHeader();
   const comps=loadCompanies();
-  const totalCols=6+comps.length*3+1;
+  const activeCompsCount=comps.filter(c=>c.active).length;
+  const totalCols=6+activeCompsCount*3+2;
   let filtered=rows;
   if(supSearch){
     filtered=rows.filter(r=>
@@ -2457,12 +2466,11 @@ function renderTable(rows){
   tbody.innerHTML=sorted.map(r=>{
     const dur=calcMin(r.hora_ini,r.hora_fin);
     const obsHtml=r.obs?`<span class="obs-cell" title="${r.obs.replace(/"/g,'&quot;')}">💬 ${r.obs}</span>`:'<span style="color:var(--tx3)">—</span>';
-    const compCols=comps.map(c=>{
+    const compCols=comps.filter(c=>c.active).map(c=>{
       const pi=r[c.key+'_pi']||0, sa=r[c.key+'_sa']||0, b=r[c.key+'_bultos']||0;
-      const op=c.active?1:.45;
-      return `<td style="opacity:${op};${!pi?'color:var(--tx3)':''}">${pi}</td>
-              <td style="opacity:${op};${!sa?'color:var(--tx3)':''}">${sa}</td>
-              <td style="opacity:${op};color:${b?'var(--ylw)':'var(--tx3)'}">${b}</td>`;
+      return `<td style="${!pi?'color:var(--tx3)':''}">${pi}</td>
+              <td style="${!sa?'color:var(--tx3)':''}">${sa}</td>
+              <td style="color:${b?'var(--ylw)':'var(--tx3)'}">${b}</td>`;
     }).join('');
     return `<tr>
       <td>${r.fecha}</td>
@@ -3438,6 +3446,7 @@ function renderCompList(){
         onclick="toggleCompany(${i})">
         ${c.active?'● Activa':'○ Inactiva'}
       </button>
+      <button class="comp-del-btn" onclick="deleteCompany(${i})" title="Eliminar empresa">🗑</button>
     </div>`).join('');
 }
 function renameCompany(i){
@@ -3455,6 +3464,18 @@ function toggleCompany(i){
   saveCompanies(comps);
   toast(comps[i].active?`${comps[i].name} activada`:`${comps[i].name} desactivada`,'in');
   renderCompList();
+}
+function deleteCompany(i){
+  const comps=loadCompanies();
+  const name=comps[i].name;
+  if(!confirm(`¿Eliminar "${name}"?\n\nLos datos históricos de esta empresa en los registros existentes se van a conservar.`)) return;
+  comps.splice(i,1);
+  saveCompanies(comps);
+  _companiesCache=null;
+  initBultosState();
+  toast(`"${name}" eliminada`,'in');
+  renderCompList();
+  renderColorPicker();
 }
 function addCompany(){
   const nameEl=document.getElementById('new-comp-name');
