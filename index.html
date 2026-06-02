@@ -2545,7 +2545,7 @@ function renderCtrlGrid(allRecs){
         ${ctrlActive?'✓ Habilitado':'✕ Desactivado'}
       </button>
       <button class="ctrl-toggle inactive" style="margin-top:4px;border-color:rgba(220,38,38,.4)"
-        onclick="event.stopPropagation();deleteCtrl(${JSON.stringify(n)})">
+        onclick="event.stopPropagation();deleteCtrl(${JSON.stringify(n)},this)">
         🗑 Eliminar
       </button>
     </div>`;
@@ -2951,15 +2951,25 @@ function isCtrlActive(name){
   const c=loadCtrlMgmt().find(c=>c.name===name);
   return !c||c.active;
 }
-function deleteCtrl(name){
-  if(!confirm(`¿Eliminar a "${name}"?\n\nSus registros históricos se conservan, solo se elimina de la lista de controladores.`)) return;
-  const list=loadCtrlMgmt().filter(c=>c.name!==name);
+function deleteCtrl(name, btn){
+  if(btn.dataset.confirm !== '1'){
+    btn.dataset.confirm = '1';
+    btn.textContent = '¿Seguro?';
+    btn.style.background = 'rgba(220,38,38,.2)';
+    btn._timer = setTimeout(()=>{
+      btn.dataset.confirm = '';
+      btn.textContent = '🗑 Eliminar';
+      btn.style.background = '';
+    }, 3000);
+    return;
+  }
+  clearTimeout(btn._timer);
+  const list = loadCtrlMgmt().filter(c=>c.name!==name);
   saveCtrlMgmt(list);
-  // Sincronizar con Firebase
   if(window.FB_READY){
     window.FB.saveCtrlMgmt(list).catch(e=>console.warn('FB deleteCtrl:',e));
   }
-  toast(`"${name}" eliminado de la lista`,'in');
+  toast(`"${name}" eliminado`,'in');
   renderCtrlGrid(loadRecs());
 }
 function toggleCtrlStatus(name){
