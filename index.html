@@ -837,6 +837,21 @@ tr:hover td{background:rgba(255,255,255,.02)}
 }
 .prep-sug-item:last-child{border:none}
 .prep-sug-item:hover,.prep-sug-item.sel{background:var(--acc-glow);color:var(--acc2)}
+#ctrl-del-confirm{
+  position:fixed;bottom:0;left:0;right:0;z-index:800;
+  background:var(--sf);border-top:1.5px solid rgba(220,38,38,.4);
+  padding:18px 20px 28px;display:none;
+  animation:slideup .25s cubic-bezier(.34,1.2,.64,1);
+}
+#ctrl-del-confirm.on{display:block}
+.ctrl-del-name{font-size:15px;font-weight:700;margin-bottom:4px}
+.ctrl-del-sub{font-size:12px;color:var(--tx2);margin-bottom:16px}
+.ctrl-del-btns{display:flex;gap:8px}
+.ctrl-del-ok{flex:1;padding:12px;background:var(--red);border:none;border-radius:var(--rs);
+  font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit}
+.ctrl-del-cancel{padding:12px 18px;background:none;border:1px solid var(--bd);
+  border-radius:var(--rs);font-size:13px;font-weight:600;color:var(--tx2);
+  cursor:pointer;font-family:inherit}
 #prep-mgmt-overlay{
   position:fixed;inset:0;z-index:500;
   background:rgba(7,9,26,.96);backdrop-filter:blur(6px);
@@ -1449,6 +1464,16 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <h3>🕐 Historial de ediciones</h3>
   </div>
   <div class="prof-body" id="hist-body"></div>
+</div>
+
+<!-- ══ CTRL DELETE CONFIRM ══════════════════════════════════════ -->
+<div id="ctrl-del-confirm">
+  <div class="ctrl-del-name" id="ctrl-del-name"></div>
+  <div class="ctrl-del-sub">Sus registros históricos se conservan. Solo se elimina de la lista.</div>
+  <div class="ctrl-del-btns">
+    <button class="ctrl-del-cancel" onclick="ctrlDelCancel()">Cancelar</button>
+    <button class="ctrl-del-ok" onclick="ctrlDelConfirm()">Sí, eliminar</button>
+  </div>
 </div>
 
 <!-- ══ JS ══════════════════════════════════════════════════════ -->
@@ -2249,6 +2274,7 @@ function initSup(){
   renderProw();
   rdcInit();
   initPreparers();
+  initCtrlMgmt();
   const recs=loadRecs();
   lastHash=simpleHash(recs);
   refreshSup(recs);
@@ -2506,13 +2532,29 @@ function renderTable(rows){
   }).join('');
 }
 
-/* -- Controller grid (always shows "hoy" for active status) */
+async function initCtrlMgmt(){
+  if(window.FB_READY){
+    try{
+      const fbList = await window.FB.loadCtrlMgmt();
+      if(fbList && fbList.length){
+        localStorage.setItem(CTRL_KEY, JSON.stringify(fbList));
+      }
+    }catch(e){}
+  }
+}
+
+/* -- Controller grid -- */
 function renderCtrlGrid(allRecs){
   const hoyRecs=filterByPeriod(allRecs,'hoy');
-  const ctrlNames=[...new Set(allRecs.map(r=>r.ctrl))].sort();
-  // Incorporar controladores registrados en el sistema aunque no tengan registros hoy
-  const fromMgmt=loadCtrlMgmt().map(c=>c.name);
-  const allNames=[...new Set([...ctrlNames,...fromMgmt])].sort();
+  const mgmtList=loadCtrlMgmt();
+  const mgmtNames=mgmtList.map(c=>c.name);
+
+  // Mostrar solo los del listado de gestión +
+  // los que tienen registros HOY pero aún no están registrados (controladores nuevos)
+  const todayNames=[...new Set(hoyRecs.map(r=>r.ctrl))];
+  const nuevosHoy=todayNames.filter(n=>!mgmtNames.includes(n));
+  const allNames=[...new Set([...mgmtNames,...nuevosHoy])].sort();
+
   if(!allNames.length){
     document.getElementById('ctrl-grid').innerHTML='<div class="empty"><div class="ei">👷</div><p>Sin controladores registrados</p></div>';
     return;
@@ -2545,7 +2587,8 @@ function renderCtrlGrid(allRecs){
         ${ctrlActive?'✓ Habilitado':'✕ Desactivado'}
       </button>
       <button class="ctrl-toggle inactive" style="margin-top:4px;border-color:rgba(220,38,38,.4)"
-        onclick="event.stopPropagation();deleteCtrl(${JSON.stringify(n)},this)">
+        data-name="${n.replace(/"/g,'&quot;')}"
+        onclick="event.stopPropagation();deleteCtrl(this.dataset.name)">
         🗑 Eliminar
       </button>
     </div>`;
@@ -2951,26 +2994,28 @@ function isCtrlActive(name){
   const c=loadCtrlMgmt().find(c=>c.name===name);
   return !c||c.active;
 }
-function deleteCtrl(name, btn){
-  if(btn.dataset.confirm !== '1'){
-    btn.dataset.confirm = '1';
-    btn.textContent = '¿Seguro?';
-    btn.style.background = 'rgba(220,38,38,.2)';
-    btn._timer = setTimeout(()=>{
-      btn.dataset.confirm = '';
-      btn.textContent = '🗑 Eliminar';
-      btn.style.background = '';
-    }, 3000);
-    return;
-  }
-  clearTimeout(btn._timer);
+let _ctrlDelPending = null;
+
+function deleteCtrl(name){
+  _ctrlDelPending = name;
+  document.getElementById('ctrl-del-name').textContent = '¿Eliminar a "' + name + '"?';
+  document.getElementById('ctrl-del-confirm').classList.add('on');
+}
+function ctrlDelConfirm(){
+  if(!_ctrlDelPending) return;
+  const name = _ctrlDelPending;
   const list = loadCtrlMgmt().filter(c=>c.name!==name);
   saveCtrlMgmt(list);
   if(window.FB_READY){
     window.FB.saveCtrlMgmt(list).catch(e=>console.warn('FB deleteCtrl:',e));
   }
   toast(`"${name}" eliminado`,'in');
+  ctrlDelCancel();
   renderCtrlGrid(loadRecs());
+}
+function ctrlDelCancel(){
+  _ctrlDelPending = null;
+  document.getElementById('ctrl-del-confirm').classList.remove('on');
 }
 function toggleCtrlStatus(name){
   const list=loadCtrlMgmt();
