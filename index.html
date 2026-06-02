@@ -1568,6 +1568,17 @@ function todayStr(){
   const d=new Date();
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
+// Jornada: empieza a las 14:30. Antes de las 14:30 pertenece a la jornada del día anterior.
+function jornadaStr(){
+  const now=new Date();
+  const h=now.getHours(), m=now.getMinutes();
+  if(h<14||(h===14&&m<30)){
+    const ayer=new Date(now);
+    ayer.setDate(ayer.getDate()-1);
+    return `${String(ayer.getDate()).padStart(2,'0')}/${String(ayer.getMonth()+1).padStart(2,'0')}/${ayer.getFullYear()}`;
+  }
+  return todayStr();
+}
 function nowTime(){
   const d=new Date();
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
@@ -1733,7 +1744,7 @@ function stopPoll(){
 function filterByPeriod(recs,period){
   const now=new Date(); now.setHours(0,0,0,0);
   if(period==='hoy'){
-    const t=todayStr(); return recs.filter(r=>r.fecha===t);
+    const t=jornadaStr(); return recs.filter(r=>r.fecha===t);
   }
   if(period==='semana'){
     const w=new Date(now); w.setDate(w.getDate()-6);
@@ -1864,7 +1875,7 @@ function toggleRecList(){
 }
 
 function refreshDash(recs){
-  const hoy=todayStr();
+  const hoy=jornadaStr();
   document.getElementById('d-fecha').textContent=hoy;
   const mis=recs.filter(r=>r.fecha===hoy&&r.ctrl===me);
   let pi=0,sa=0;
@@ -2084,7 +2095,7 @@ function saveRecord(){
     id: editId||uid(),
     ts: existing?.ts||Date.now(),
     updated_at: Date.now(),
-    fecha: existing?.fecha||todayStr(),
+    fecha: existing?.fecha||jornadaStr(),
     ctrl: me,
     id_ruta: ruta,
     hora_ini: tIni||'',
@@ -2154,7 +2165,7 @@ function goBack(){
 
 /* ══════════════ RESUMEN EJECUTIVO ═══════════════════════════ */
 function renderExecSummary(allRecs){
-  const hoy = todayStr();
+  const hoy = jornadaStr();
   const hoyRecs  = allRecs.filter(r=>r.fecha===hoy);
   const comps    = loadCompanies();
   const allKeys  = comps.map(c=>c.key);
@@ -2378,7 +2389,7 @@ function checkOpenAlerts(allRecs){
   const panel=document.getElementById('alert-panel');
   const list=document.getElementById('alert-list');
   if(!panel||!list) return;
-  const hoy=todayStr();
+  const hoy=jornadaStr();
   const now=new Date();
   const nowMin=now.getHours()*60+now.getMinutes();
   const open=allRecs.filter(r=>{
@@ -2532,6 +2543,10 @@ function renderCtrlGrid(allRecs){
       <button class="ctrl-toggle ${ctrlActive?'active':'inactive'}"
         onclick="event.stopPropagation();toggleCtrlStatus(${JSON.stringify(n)})">
         ${ctrlActive?'✓ Habilitado':'✕ Desactivado'}
+      </button>
+      <button class="ctrl-toggle inactive" style="margin-top:4px;border-color:rgba(220,38,38,.4)"
+        onclick="event.stopPropagation();deleteCtrl(${JSON.stringify(n)})">
+        🗑 Eliminar
       </button>
     </div>`;
   }).join('');
@@ -2936,6 +2951,17 @@ function isCtrlActive(name){
   const c=loadCtrlMgmt().find(c=>c.name===name);
   return !c||c.active;
 }
+function deleteCtrl(name){
+  if(!confirm(`¿Eliminar a "${name}"?\n\nSus registros históricos se conservan, solo se elimina de la lista de controladores.`)) return;
+  const list=loadCtrlMgmt().filter(c=>c.name!==name);
+  saveCtrlMgmt(list);
+  // Sincronizar con Firebase
+  if(window.FB_READY){
+    window.FB.saveCtrlMgmt(list).catch(e=>console.warn('FB deleteCtrl:',e));
+  }
+  toast(`"${name}" eliminado de la lista`,'in');
+  renderCtrlGrid(loadRecs());
+}
 function toggleCtrlStatus(name){
   const list=loadCtrlMgmt();
   const c=list.find(c=>c.name===name);
@@ -2963,7 +2989,7 @@ function updateLiveElapsed(){
   });
 }
 function renderLiveView(allRecs){
-  const hoy=todayStr();
+  const hoy=jornadaStr();
   const hoyRecs=allRecs.filter(r=>r.fecha===hoy);
   const now=new Date();
   const nowMin=now.getHours()*60+now.getMinutes();
@@ -3144,7 +3170,7 @@ function rdcToggle(){
 // Guardar en localStorage Y Firebase
 async function rdcSaveLocal(){
   const data = {
-    fecha: todayStr(),
+    fecha: jornadaStr(),
     ids: rdcLista,
     manuales: [...rdcManuales]
   };
@@ -3174,7 +3200,7 @@ async function rdcInit(){
     catch(e){}
   }
 
-  if(saved && saved.fecha === todayStr()){
+  if(saved && saved.fecha === jornadaStr()){
     rdcLista = saved.ids || [];
     rdcManuales = new Set(saved.manuales || []);
     // Actualizar localStorage con lo que vino de Firebase
@@ -3189,7 +3215,7 @@ async function rdcInit(){
     // Nuevo día — limpiar
     localStorage.removeItem(RDC_KEY);
     if(window.FB_READY){
-      try{ await window.FB.saveRdcLista({fecha: todayStr(), ids:[], manuales:[]}); }catch(e){}
+      try{ await window.FB.saveRdcLista({fecha: jornadaStr(), ids:[], manuales:[]}); }catch(e){}
     }
   }
 }
@@ -3214,7 +3240,7 @@ function rdcLimpiar(){
   rdcManuales = new Set();
   localStorage.removeItem(RDC_KEY);
   if(window.FB_READY){
-    window.FB.saveRdcLista({fecha: todayStr(), ids:[], manuales:[]}).catch(e=>{});
+    window.FB.saveRdcLista({fecha: jornadaStr(), ids:[], manuales:[]}).catch(e=>{});
   }
   document.getElementById('rdc-input').value = '';
   document.getElementById('rdc-result').style.display = 'none';
