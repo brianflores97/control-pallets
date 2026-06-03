@@ -85,6 +85,13 @@ window.FB = {
   async loadRdcLista(){
     const snap = await get(ref(db, 'config/rdc_lista'));
     return snap.exists() ? snap.val() : null;
+  },
+  // Escuchar cambios en tiempo real en la lista de rutas del día
+  onRdcLista(callback){
+    return onValue(ref(db, 'config/rdc_lista'), snap => {
+      const data = snap.exists() ? snap.val() : null;
+      callback(data);
+    });
   }
 };
 
@@ -916,8 +923,22 @@ tr:hover td{background:rgba(255,255,255,.02)}
 }
 .ctrl-toggle.active{border-color:rgba(22,163,74,.3);color:var(--grn);background:rgba(22,163,74,.05)}
 .ctrl-toggle.inactive{border-color:rgba(220,38,38,.3);color:var(--red);background:rgba(220,38,38,.05)}
-/* ══ CONTROL DE RUTAS DEL DÍA ════════════════════════════════ */
-.rdc-box{background:var(--sf);border:1.5px solid var(--bd2);border-radius:var(--r);padding:16px;margin-bottom:14px}
+/* ══ RUTAS DEL DÍA — CONTROLADOR ════════════════════════════ */
+.ctrl-rdc-box{
+  background:var(--sf);border:1.5px solid var(--bd2);
+  border-radius:var(--r);padding:13px 14px;margin-bottom:12px;
+}
+.ctrl-rdc-stats{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.ctrl-rdc-stat{font-size:12px;font-weight:700;padding:4px 11px;border-radius:5px}
+.ctrl-rdc-stat.total{background:var(--sf2);color:var(--tx2);border:1px solid var(--bd)}
+.ctrl-rdc-stat.cer{background:rgba(22,163,74,.1);color:var(--grn);border:1px solid rgba(22,163,74,.25)}
+.ctrl-rdc-stat.pen{background:rgba(220,38,38,.1);color:var(--red);border:1px solid rgba(220,38,38,.25)}
+.ctrl-rdc-pend-grid{display:flex;flex-wrap:wrap;gap:5px}
+.ctrl-rdc-id{
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
+  background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.2);
+  border-radius:5px;padding:4px 9px;color:var(--tx);
+}background:var(--sf);border:1.5px solid var(--bd2);border-radius:var(--r);padding:16px;margin-bottom:14px}
 .rdc-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 .rdc-title{font-size:10px;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:.9px}
 .rdc-stats{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
@@ -1129,6 +1150,16 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="sc2"><div class="sv" id="st-sa">0</div><div class="sl">Total SA</div></div>
   </div>
   <button class="btn-new" onclick="goForm(null)">＋ Nueva ID Ruta</button>
+
+  <!-- Rutas del día — visible solo si el supervisor cargó la lista -->
+  <div class="ctrl-rdc-box" id="ctrl-rdc-box" style="display:none">
+    <div class="sh" style="margin-bottom:8px">📋 Control de rutas del día</div>
+    <div class="ctrl-rdc-stats" id="ctrl-rdc-stats"></div>
+    <div id="ctrl-rdc-pend-wrap" style="display:none">
+      <div class="sh" style="margin-bottom:6px">Pendientes</div>
+      <div class="ctrl-rdc-pend-grid" id="ctrl-rdc-pend-list"></div>
+    </div>
+  </div>
   <div class="sh" style="cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between" onclick="toggleRecList()">
     <span>Mis registros de hoy</span>
     <span id="rec-list-arrow" style="font-size:12px;color:var(--tx3);transition:transform .2s">▸</span>
@@ -1871,13 +1902,17 @@ function enterAsCtrl(n){
   const recs=loadRecs();
   lastHash=simpleHash(recs);
   refreshDash(recs);
+  ctrlRdcInit(); // suscribirse a lista de rutas del día en tiempo real
   startPoll();
 }
 function showTopbar(){
   document.getElementById('topbar').style.display='flex';
 }
 function logout(){
-  stopPoll(); me=null; role=null; editId=null;
+  stopPoll();
+  if(typeof ctrlRdcUnsub==='function'){ ctrlRdcUnsub(); ctrlRdcUnsub=null; }
+  ctrlRdcData=null;
+  me=null; role=null; editId=null;
   clearSession();
   // Cerrar sesión en Firebase Auth si es supervisor
   if(window.FB_AUTH) window.FB_AUTH.logout().catch(()=>{});
@@ -1888,6 +1923,65 @@ function logout(){
   setLTab('ctrl');
   showSc('login');
   initLogin();
+}
+
+/* ══════════════ RUTAS DEL DÍA — CONTROLADOR ════════════════ */
+let ctrlRdcData = null;       // {fecha, ids, manuales} desde Firebase
+let ctrlRdcUnsub = null;      // Firebase unsubscribe
+
+function ctrlRdcInit(){
+  // Cancelar listener anterior si existe
+  if(typeof ctrlRdcUnsub === 'function'){ ctrlRdcUnsub(); ctrlRdcUnsub=null; }
+  if(!window.FB_READY) return;
+
+  ctrlRdcUnsub = window.FB.onRdcLista(data => {
+    const jornada = jornadaStr();
+    if(data && data.fecha === jornada && data.ids && data.ids.length){
+      ctrlRdcData = data;
+    } else {
+      ctrlRdcData = null;
+    }
+    ctrlRdcRender(loadRecs());
+  });
+}
+
+function ctrlRdcRender(allRecs){
+  const box = document.getElementById('ctrl-rdc-box');
+  if(!box) return;
+
+  if(!ctrlRdcData || !ctrlRdcData.ids || !ctrlRdcData.ids.length){
+    box.style.display = 'none';
+    return;
+  }
+
+  box.style.display = 'block';
+  const ids = ctrlRdcData.ids;
+  const manuales = new Set(ctrlRdcData.manuales || []);
+
+  // IDs cerradas = tienen registro con inicio y fin
+  const registradas = new Set(
+    allRecs.filter(r=>r.hora_ini && r.hora_fin).map(r=>String(r.id_ruta).trim())
+  );
+
+  const cerradas = ids.filter(id => registradas.has(String(id)) || manuales.has(String(id)));
+  const pendientes = ids.filter(id => !registradas.has(String(id)) && !manuales.has(String(id)));
+
+  // Stats
+  document.getElementById('ctrl-rdc-stats').innerHTML = `
+    <span class="ctrl-rdc-stat total">${ids.length} total</span>
+    <span class="ctrl-rdc-stat cer">✓ ${cerradas.length} cerradas</span>
+    <span class="ctrl-rdc-stat pen">⏳ ${pendientes.length} pendientes</span>`;
+
+  // Lista de pendientes
+  const pendWrap = document.getElementById('ctrl-rdc-pend-wrap');
+  const pendList  = document.getElementById('ctrl-rdc-pend-list');
+  if(pendientes.length){
+    pendList.innerHTML = pendientes.map(id=>`<span class="ctrl-rdc-id">${id}</span>`).join('');
+    pendWrap.style.display = 'block';
+  } else {
+    pendList.innerHTML = '';
+    pendWrap.style.display = 'none';
+  }
 }
 
 /* ══════════════ CONTROLLER DASHBOARD ══════════════════ */
@@ -1909,6 +2003,7 @@ function refreshDash(recs){
   document.getElementById('st-rutas').textContent=mis.length;
   document.getElementById('st-pi').textContent=pi;
   document.getElementById('st-sa').textContent=sa;
+  ctrlRdcRender(recs); // actualizar contadores de rutas del día
 
   const list=document.getElementById('rec-list');
   if(!mis.length){
