@@ -3808,6 +3808,7 @@ async function init(){
         const recs=loadRecs();
         lastHash=simpleHash(recs);
         refreshDash(recs);
+        ctrlRdcInit(); // suscribirse a lista de rutas del día en tiempo real
         setTimeout(()=>{ updateOnlineStatus(); initPWA(); startPoll(); }, 500);
       } else if(role==='supervisor'){
         requestAnimationFrame(()=>{
