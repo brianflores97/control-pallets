@@ -126,7 +126,7 @@ window.dispatchEvent(new Event('fb-ready'));
 window.addEventListener('load', function() {
   if (!('serviceWorker' in navigator)) return;
   const swCode = `
-    const CACHE = 'pallets-v3';
+    const CACHE = 'pallets-v4';
     const OFFLINE_URLS = [
       self.location.href.replace(/\\/[^\\/]*$/, '/') || '/',
       'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
