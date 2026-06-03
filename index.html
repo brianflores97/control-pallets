@@ -939,9 +939,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
   background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.2);
   border-radius:5px;padding:4px 9px;color:var(--tx);
 }background:var(--sf);border:1.5px solid var(--bd2);border-radius:var(--r);padding:16px;margin-bottom:14px}
-.rdc-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.rdc-header{display:block;margin-bottom:12px}
 .rdc-title{font-size:10px;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:.9px}
-.rdc-stats{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.rdc-stats{display:flex;gap:8px;flex-wrap:wrap}
 .rdc-stat{font-size:11px;font-weight:700;padding:3px 10px;border-radius:4px}
 .rdc-stat.total{background:var(--sf2);color:var(--tx2);border:1px solid var(--bd)}
 .rdc-stat.cerradas{background:rgba(22,163,74,.1);color:var(--grn);border:1px solid rgba(22,163,74,.25)}
@@ -1155,12 +1155,12 @@ tr:hover td{background:rgba(255,255,255,.02)}
   <div class="ctrl-rdc-box" id="ctrl-rdc-box" style="display:none">
     <div class="sh" style="margin-bottom:8px">📋 Control de rutas del día</div>
     <div class="ctrl-rdc-stats" id="ctrl-rdc-stats"></div>
-    <div id="ctrl-rdc-pend-wrap" style="display:none">
-      <div class="sh" style="margin-bottom:6px;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between" onclick="toggleCtrlRdcPend()">
-        <span>Pendientes</span>
-        <span id="ctrl-rdc-pend-arrow" style="font-size:12px;color:var(--tx3);transition:transform .2s">▸</span>
+    <div id="ctrl-rdc-pend-wrap" style="display:none;margin-top:8px;border-top:1px solid var(--bd);padding-top:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;padding:4px 0" onclick="toggleCtrlRdcPend()">
+        <span style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.5px">Pendientes</span>
+        <span id="ctrl-rdc-pend-arrow" style="font-size:16px;color:var(--tx2);transition:transform .2s;line-height:1">▸</span>
       </div>
-      <div id="ctrl-rdc-pend-list-wrap" style="display:none">
+      <div id="ctrl-rdc-pend-list-wrap" style="display:none;margin-top:6px">
         <div class="ctrl-rdc-pend-grid" id="ctrl-rdc-pend-list"></div>
       </div>
     </div>
@@ -1329,14 +1329,14 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
   <!-- Control de Rutas del Día -->
   <div class="rdc-box" id="rdc-box">
-    <div class="rdc-header" onclick="rdcToggle()" style="cursor:pointer;user-select:none">
+    <div class="rdc-header" onclick="rdcToggle()" style="cursor:pointer;user-select:none;position:relative;padding-right:26px">
       <div class="rdc-title">📋 Control de rutas del día</div>
       <div class="rdc-stats" id="rdc-stats" style="display:none">
         <span class="rdc-stat total" id="rdc-total">0 total</span>
         <span class="rdc-stat cerradas" id="rdc-cerradas">0 cerradas</span>
         <span class="rdc-stat pendientes" id="rdc-pendientes">0 pendientes</span>
       </div>
-      <span id="rdc-arrow" style="margin-left:auto;font-size:12px;color:var(--tx3);transition:transform .2s;flex-shrink:0">▸</span>
+      <span id="rdc-arrow" style="position:absolute;right:0;top:2px;font-size:16px;color:var(--tx2);transition:transform .2s">▸</span>
     </div>
     <div id="rdc-body" style="display:none">
       <div class="rdc-input-row">
@@ -1986,20 +1986,16 @@ function ctrlRdcRender(allRecs){
     <span class="ctrl-rdc-stat cer">✓ ${cerradas.length} cerradas</span>
     <span class="ctrl-rdc-stat pen">⏳ ${pendientes.length} pendientes</span>`;
 
-  // Lista de pendientes
+  // Sección pendientes — siempre visible cuando hay lista
   const pendWrap     = document.getElementById('ctrl-rdc-pend-wrap');
   const pendList     = document.getElementById('ctrl-rdc-pend-list');
   const pendListWrap = document.getElementById('ctrl-rdc-pend-list-wrap');
+  if(pendWrap) pendWrap.style.display = 'block';
   if(pendientes.length){
-    pendList.innerHTML = pendientes.map(id=>`<span class="ctrl-rdc-id">${id}</span>`).join('');
-    pendWrap.style.display = 'block';
-    // No forzar apertura — respeta si el usuario lo cerró
+    if(pendList) pendList.innerHTML = pendientes.map(id=>`<span class="ctrl-rdc-id">${id}</span>`).join('');
   } else {
-    pendList.innerHTML = '';
-    pendWrap.style.display = 'none';
-    if(pendListWrap) pendListWrap.style.display = 'none';
-    const arrow = document.getElementById('ctrl-rdc-pend-arrow');
-    if(arrow) arrow.style.transform = '';
+    if(pendList) pendList.innerHTML = '<span style="font-size:12px;color:var(--grn);font-weight:600">✓ Todas cerradas</span>';
+    // Si quedó abierta y se cerraron todas, actualizar sin cerrar
   }
 }
 
