@@ -2189,28 +2189,40 @@ function goBack(){
 }
 
 /* ══════════════ RESUMEN EJECUTIVO ═══════════════════════════ */
-function renderExecSummary(allRecs){
-  const hoy = jornadaStr();
-  const hoyRecs  = allRecs.filter(r=>r.fecha===hoy);
-  const comps    = loadCompanies();
-  const allKeys  = comps.map(c=>c.key);
+function renderExecSummary(filteredRecs, allRecs){
+  const comps   = loadCompanies();
+  const allKeys = comps.map(c=>c.key);
 
-  // Totales hoy
+  // Totales del período activo
   let piH=0, saH=0, bultosH=0, minsH=0, minsCount=0;
-  hoyRecs.forEach(r=>{
+  filteredRecs.forEach(r=>{
     allKeys.forEach(k=>{ piH+=r[k+'_pi']||0; saH+=r[k+'_sa']||0; bultosH+=r[k+'_bultos']||0; });
     const d=calcMin(r.hora_ini,r.hora_fin);
     if(d){ minsH+=d; minsCount++; }
   });
 
   const avgDur = minsCount ? Math.round(minsH/minsCount) : 0;
-  const ctrls  = [...new Set(hoyRecs.map(r=>r.ctrl))];
+  const ctrls  = [...new Set(filteredRecs.map(r=>r.ctrl))];
 
-  // KPIs — sin comparativa vs ayer
-  document.getElementById('exec-date').textContent = hoy;
+  // Título y etiquetas según período
+  const periodoLabels = {hoy:'Resumen de la jornada', semana:'Resumen de la semana', mes:'Resumen del mes', todo:'Resumen total'};
+  const titulo   = specificDate ? `Resumen del ${specificDate}` : routeFilter ? `Ruta ${routeFilter}` : (periodoLabels[supPeriod]||'Resumen');
+  const fechaLbl = specificDate || (supPeriod==='hoy' ? jornadaStr() : '');
+  const ctrlLbl  = supPeriod==='hoy' ? 'Controladores activos hoy' : 'Controladores en el período';
+
+  // Actualizar título y fecha dinámicos
+  const titleSpan = document.querySelector('#exec-summary .exec-title span:first-child');
+  if(titleSpan) titleSpan.textContent = '📊 ' + titulo;
+  document.getElementById('exec-date').textContent = fechaLbl;
+
+  // Actualizar label de controladores en el colapsable
+  const ctrlSect = document.querySelector('#exec-ctrl-wrap .exec-sect');
+  if(ctrlSect) ctrlSect.textContent = ctrlLbl;
+
+  // KPIs
   document.getElementById('exec-kpis').innerHTML = `
     <div class="exec-kpi">
-      <div class="exec-kpi-val" style="color:var(--acc)">${hoyRecs.length}</div>
+      <div class="exec-kpi-val" style="color:var(--acc)">${filteredRecs.length}</div>
       <div class="exec-kpi-lbl">Rutas cerradas</div>
     </div>
     <div class="exec-kpi">
@@ -2228,12 +2240,12 @@ function renderExecSummary(allRecs){
 
   // Por empresa
   const maxTotal = Math.max(1, ...comps.map(c=>{
-    return hoyRecs.reduce((s,r)=>(s+(r[c.key+'_pi']||0)+(r[c.key+'_sa']||0)),0);
+    return filteredRecs.reduce((s,r)=>(s+(r[c.key+'_pi']||0)+(r[c.key+'_sa']||0)),0);
   }));
   document.getElementById('exec-companies').innerHTML = comps.filter(c=>c.active).map(c=>{
-    const pi  = hoyRecs.reduce((s,r)=>s+(r[c.key+'_pi']||0),0);
-    const sa  = hoyRecs.reduce((s,r)=>s+(r[c.key+'_sa']||0),0);
-    const bul = hoyRecs.reduce((s,r)=>s+(r[c.key+'_bultos']||0),0);
+    const pi  = filteredRecs.reduce((s,r)=>s+(r[c.key+'_pi']||0),0);
+    const sa  = filteredRecs.reduce((s,r)=>s+(r[c.key+'_sa']||0),0);
+    const bul = filteredRecs.reduce((s,r)=>s+(r[c.key+'_bultos']||0),0);
     const pct = Math.round(((pi+sa)/maxTotal)*100);
     return `<div class="exec-comp-row">
       <div class="exec-comp-dot" style="background:${c.color}"></div>
@@ -2249,12 +2261,12 @@ function renderExecSummary(allRecs){
         </div>
       </div>
     </div>`;
-  }).join('') || '<div style="color:var(--tx3);font-size:12px;padding:8px">Sin datos hoy</div>';
+  }).join('') || '<div style="color:var(--tx3);font-size:12px;padding:8px">Sin datos en este período</div>';
 
-  // Controladores activos
+  // Controladores del período
   document.getElementById('exec-ctrls').innerHTML = ctrls.length
     ? ctrls.map(n=>{
-        const ctrlRecs = hoyRecs.filter(r=>r.ctrl===n);
+        const ctrlRecs = filteredRecs.filter(r=>r.ctrl===n);
         const rutas = ctrlRecs.length;
         const bultos = ctrlRecs.reduce((s,r)=>s+allKeys.reduce((sum,k)=>sum+(r[k+'_bultos']||0),0),0);
         return `<div class="exec-ctrl-chip">
@@ -2263,7 +2275,7 @@ function renderExecSummary(allRecs){
           <span class="exec-ctrl-n" title="${rutas} rutas">${bultos}📦</span>
         </div>`;
       }).join('')
-    : '<span style="color:var(--tx3);font-size:11px">Ninguno aún hoy</span>';
+    : '<span style="color:var(--tx3);font-size:11px">Sin actividad en este período</span>';
 }
 
 /* ══════════════ SUPERVISOR ══════════════════════════════ */
@@ -2316,8 +2328,7 @@ function setSupTab(t){
 }
 function refreshSup(recs){
   checkOpenAlerts(recs);
-  renderExecSummary(recs);
-  rdcRender(recs); // actualizar control de rutas del día
+  rdcRender(recs);
   let fil;
   if(routeFilter){
     fil = recs.filter(r => String(r.id_ruta).trim() === routeFilter);
@@ -2326,8 +2337,9 @@ function refreshSup(recs){
   } else {
     fil = filterByPeriod(recs, supPeriod==='todo'?'todo':supPeriod);
   }
+  renderExecSummary(fil, recs);
   if(supTab==='reg') renderTable(fil);
-  else if(supTab==='ctrl') renderCtrlGrid(recs);
+  else if(supTab==='ctrl') renderCtrlGrid(recs, fil);
   else if(supTab==='rank') renderRanking(fil);
   else if(supTab==='live') renderLiveView(recs);
 }
@@ -2544,8 +2556,10 @@ async function initCtrlMgmt(){
 }
 
 /* -- Controller grid -- */
-function renderCtrlGrid(allRecs){
-  const hoyRecs=filterByPeriod(allRecs,'hoy');
+function renderCtrlGrid(allRecs, periodRecs){
+  // periodRecs = registros del período activo (pasados desde refreshSup)
+  const filRecs = periodRecs || filterByPeriod(allRecs, supPeriod==='todo'?'todo':supPeriod);
+  const hoyRecs = filterByPeriod(allRecs,'hoy'); // para estado "activo hoy"
   const mgmtList=loadCtrlMgmt();
   const mgmtNames=mgmtList.map(c=>c.name);
 
@@ -2560,18 +2574,21 @@ function renderCtrlGrid(allRecs){
     return;
   }
   const allKeys=getEmps();
+  // Etiqueta de período para las cards
+  const periodoLbl = specificDate ? specificDate : {hoy:'hoy', semana:'semana', mes:'mes', todo:'total'}[supPeriod]||'período';
   document.getElementById('ctrl-grid').innerHTML=allNames.map(n=>{
-    const mis=hoyRecs.filter(r=>r.ctrl===n);
+    const misPeriodo=filRecs.filter(r=>r.ctrl===n); // datos del período seleccionado
+    const misHoy=hoyRecs.filter(r=>r.ctrl===n);     // para estado activo/inactivo
     let bultos=0;
-    mis.forEach(r=>{ allKeys.forEach(k=>{ bultos+=r[k+'_bultos']||0; }); });
+    misPeriodo.forEach(r=>{ allKeys.forEach(k=>{ bultos+=r[k+'_bultos']||0; }); });
     const col=avColor(n);
-    const active=mis.length>0;
+    const active=misHoy.length>0; // activo = tiene registros HOY
     const ctrlActive=isCtrlActive(n);
     return `<div class="ccard" onclick="openProfile(${JSON.stringify(n)})">
       <div class="cav" style="background:${col};opacity:${ctrlActive?1:.45}">${initials(n)}</div>
       <div class="cn" style="opacity:${ctrlActive?1:.6}">${n}</div>
-      <div class="cst">${mis.length}</div>
-      <div class="csl">Rutas hoy</div>
+      <div class="cst">${misPeriodo.length}</div>
+      <div class="csl">Rutas ${periodoLbl}</div>
       <div class="csub">
         <span class="cbadge" style="color:var(--ylw);border-color:rgba(217,119,6,.3)">📦 ${bultos} bultos</span>
       </div>
@@ -2579,7 +2596,7 @@ function renderCtrlGrid(allRecs){
         <span style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;
           background:${active?'rgba(22,163,74,.08)':'rgba(65,65,70,.3)'};
           color:${active?'var(--grn)':'var(--tx3)'}">
-          ${active?'● Activo hoy':'○ Sin registros'}
+          ${active?'● Activo hoy':'○ Sin registros hoy'}
         </span>
       </div>
       <button class="ctrl-toggle ${ctrlActive?'active':'inactive'}"
