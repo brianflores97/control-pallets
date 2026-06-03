@@ -1156,8 +1156,13 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="sh" style="margin-bottom:8px">📋 Control de rutas del día</div>
     <div class="ctrl-rdc-stats" id="ctrl-rdc-stats"></div>
     <div id="ctrl-rdc-pend-wrap" style="display:none">
-      <div class="sh" style="margin-bottom:6px">Pendientes</div>
-      <div class="ctrl-rdc-pend-grid" id="ctrl-rdc-pend-list"></div>
+      <div class="sh" style="margin-bottom:6px;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between" onclick="toggleCtrlRdcPend()">
+        <span>Pendientes</span>
+        <span id="ctrl-rdc-pend-arrow" style="font-size:12px;color:var(--tx3);transition:transform .2s">▸</span>
+      </div>
+      <div id="ctrl-rdc-pend-list-wrap" style="display:none">
+        <div class="ctrl-rdc-pend-grid" id="ctrl-rdc-pend-list"></div>
+      </div>
     </div>
   </div>
   <div class="sh" style="cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between" onclick="toggleRecList()">
@@ -1945,6 +1950,15 @@ function ctrlRdcInit(){
   });
 }
 
+function toggleCtrlRdcPend(){
+  const wrap  = document.getElementById('ctrl-rdc-pend-list-wrap');
+  const arrow = document.getElementById('ctrl-rdc-pend-arrow');
+  if(!wrap||!arrow) return;
+  const open = wrap.style.display === 'none';
+  wrap.style.display  = open ? 'block' : 'none';
+  arrow.style.transform = open ? 'rotate(90deg)' : '';
+}
+
 function ctrlRdcRender(allRecs){
   const box = document.getElementById('ctrl-rdc-box');
   if(!box) return;
@@ -1973,14 +1987,19 @@ function ctrlRdcRender(allRecs){
     <span class="ctrl-rdc-stat pen">⏳ ${pendientes.length} pendientes</span>`;
 
   // Lista de pendientes
-  const pendWrap = document.getElementById('ctrl-rdc-pend-wrap');
-  const pendList  = document.getElementById('ctrl-rdc-pend-list');
+  const pendWrap     = document.getElementById('ctrl-rdc-pend-wrap');
+  const pendList     = document.getElementById('ctrl-rdc-pend-list');
+  const pendListWrap = document.getElementById('ctrl-rdc-pend-list-wrap');
   if(pendientes.length){
     pendList.innerHTML = pendientes.map(id=>`<span class="ctrl-rdc-id">${id}</span>`).join('');
     pendWrap.style.display = 'block';
+    // No forzar apertura — respeta si el usuario lo cerró
   } else {
     pendList.innerHTML = '';
     pendWrap.style.display = 'none';
+    if(pendListWrap) pendListWrap.style.display = 'none';
+    const arrow = document.getElementById('ctrl-rdc-pend-arrow');
+    if(arrow) arrow.style.transform = '';
   }
 }
 
