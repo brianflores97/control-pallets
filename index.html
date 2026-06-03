@@ -938,7 +938,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
   font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
   background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.2);
   border-radius:5px;padding:4px 9px;color:var(--tx);
-}background:var(--sf);border:1.5px solid var(--bd2);border-radius:var(--r);padding:16px;margin-bottom:14px}
+}
+/* ══ CONTROL DE RUTAS DEL DÍA ════════════════════════════ */
+.rdc-box{background:var(--sf);border:1.5px solid var(--bd2);border-radius:var(--r);padding:16px;margin-bottom:14px}
 .rdc-header{display:block;margin-bottom:12px}
 .rdc-title{font-size:10px;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:.9px}
 .rdc-stats{display:flex;gap:8px;flex-wrap:wrap}
@@ -1329,14 +1331,14 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
   <!-- Control de Rutas del Día -->
   <div class="rdc-box" id="rdc-box">
-    <div class="rdc-header" onclick="rdcToggle()" style="cursor:pointer;user-select:none;position:relative;padding-right:26px">
+    <div class="rdc-header" onclick="rdcToggle()" style="cursor:pointer;user-select:none;overflow:hidden">
+      <span id="rdc-arrow" style="float:right;font-size:16px;color:var(--tx2);transition:transform .2s;margin-left:8px">▸</span>
       <div class="rdc-title">📋 Control de rutas del día</div>
-      <div class="rdc-stats" id="rdc-stats" style="display:none">
+      <div class="rdc-stats" id="rdc-stats" style="display:none;margin-top:6px">
         <span class="rdc-stat total" id="rdc-total">0 total</span>
         <span class="rdc-stat cerradas" id="rdc-cerradas">0 cerradas</span>
         <span class="rdc-stat pendientes" id="rdc-pendientes">0 pendientes</span>
       </div>
-      <span id="rdc-arrow" style="position:absolute;right:0;top:2px;font-size:16px;color:var(--tx2);transition:transform .2s">▸</span>
     </div>
     <div id="rdc-body" style="display:none">
       <div class="rdc-input-row">
