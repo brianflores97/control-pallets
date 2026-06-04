@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -106,7 +107,13 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 /* ══ FILTER BAR + DATE PICKER ══ */
 .filter-bar{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
 .filter-bar .prow{margin-bottom:0}
-.date-filter{display:flex;align-items:center;gap:8px;margin-left:auto;
+.right-filters{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+.fsel{background:var(--sf);border:1px solid var(--bd);border-radius:9px;padding:8px 11px;
+  font-family:inherit;font-size:12px;font-weight:600;color:var(--tx);outline:none;cursor:pointer;
+  box-shadow:var(--sh);max-width:190px;transition:border-color .15s}
+.fsel:focus{border-color:var(--acc2)}
+.fsel.active{border-color:var(--acc);color:var(--acc);background:var(--acc-soft)}
+.date-filter{display:flex;align-items:center;gap:8px;
   background:var(--sf);border:1px solid var(--bd);border-radius:9px;
   padding:6px 11px;box-shadow:var(--sh)}
 .date-ico{font-size:13px;opacity:.7}
@@ -116,7 +123,60 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
   font-size:11px;font-weight:700;padding:4px 9px;border-radius:6px;cursor:pointer;
   display:inline-flex;align-items:center;transition:all .15s}
 .date-clear:hover{background:rgba(220,38,38,.08);color:var(--red)}
-@media(max-width:560px){.date-filter{margin-left:0;width:100%}#date-picker{flex:1}}
+.clear-ent{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);font-family:inherit;
+  font-size:11px;font-weight:700;padding:8px 12px;border-radius:9px;cursor:pointer;
+  box-shadow:var(--sh);transition:all .15s}
+.clear-ent:hover{border-color:var(--red);color:var(--red)}
+@media(max-width:560px){
+  .right-filters{width:100%}
+  .fsel{flex:1;max-width:none}
+  .date-filter{flex:1}#date-picker{flex:1}
+}
+/* ══ DAY NAV + RANGE ══ */
+.day-nav{display:flex;align-items:center;gap:5px}
+.day-arrow{width:30px;height:34px;border:1px solid var(--bd);background:var(--sf);border-radius:8px;
+  color:var(--tx2);font-size:15px;font-weight:700;cursor:pointer;box-shadow:var(--sh);
+  display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit;flex-shrink:0}
+.day-arrow:hover:not(:disabled){border-color:var(--acc);color:var(--acc)}
+.day-arrow:disabled{opacity:.35;cursor:not-allowed}
+.range-row{display:flex;align-items:center;gap:9px;margin:-6px 0 16px;flex-wrap:wrap;
+  background:var(--acc-soft);border:1px solid var(--bd2);border-radius:10px;padding:11px 15px}
+.range-lbl{font-size:11px;font-weight:700;color:var(--tx2)}
+.range-inp{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:7px 11px;
+  font-family:inherit;font-size:12px;font-weight:600;color:var(--tx);outline:none;cursor:pointer;color-scheme:light}
+.range-inp:focus{border-color:var(--acc)}
+.rank-body{margin-top:15px}
+.rank-metric{margin-bottom:13px}
+
+/* ══ TABLA DE DETALLE ══ */
+.table-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);
+  padding:16px 19px;margin-top:12px}
+.table-head{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  cursor:pointer;user-select:none}
+.table-arrow{font-size:13px;color:var(--tx3);transition:transform .2s;flex-shrink:0}
+.table-arrow.open{transform:rotate(90deg)}
+.table-body{margin-top:15px}
+.table-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:13px}
+.table-search{background:var(--sf2);border:1px solid var(--bd);border-radius:9px;padding:8px 13px;
+  font-family:inherit;font-size:12px;font-weight:600;color:var(--tx);outline:none;min-width:210px}
+.table-search:focus{border-color:var(--acc)}
+.table-search::placeholder{color:var(--tx3)}
+.btn-excel{background:var(--acc);border:none;border-radius:9px;padding:9px 17px;color:#fff;
+  font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .15s;white-space:nowrap}
+.btn-excel:hover{opacity:.88}
+.table-scroll{overflow:auto;max-height:430px;border:1px solid var(--bd);border-radius:10px}
+.dtable{width:100%;border-collapse:collapse;font-size:12px}
+.dtable thead th{position:sticky;top:0;background:var(--sf2);z-index:2;padding:9px 12px;text-align:left;
+  font-weight:700;color:var(--tx2);font-size:10px;text-transform:uppercase;letter-spacing:.4px;
+  white-space:nowrap;border-bottom:1px solid var(--bd)}
+.dtable td{padding:8px 12px;border-bottom:1px solid var(--bd);white-space:nowrap;font-weight:600;
+  font-variant-numeric:tabular-nums;color:var(--tx)}
+.dtable tbody tr:last-child td{border-bottom:none}
+.dtable tbody tr:hover td{background:var(--sf2)}
+.dt-obs{display:inline-block;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  vertical-align:bottom;font-weight:500;color:var(--tx2);font-variant-numeric:normal}
+.dt-z{color:var(--tx3)}
+.dt-empty{text-align:center;padding:30px;color:var(--tx3);font-weight:600}
 
 /* ══ HERO ══ */
 .hero{
@@ -132,7 +192,17 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .hero-dow{font-size:18px;font-weight:800;color:#fff;text-transform:capitalize;letter-spacing:.1px}
 .hero-month{font-size:11px;font-weight:600;color:rgba(255,255,255,.72);
   text-transform:uppercase;letter-spacing:1.6px}
-.hero-ops{margin-left:auto;text-align:right;z-index:1}
+.hero-right{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:10px;z-index:1}
+.hero-nav{display:flex;align-items:center;gap:6px}
+.hero-nav-btn{width:32px;height:32px;border-radius:9px;border:1px solid rgba(255,255,255,.28);
+  background:rgba(255,255,255,.13);color:#fff;font-size:15px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit;padding:0}
+.hero-nav-btn:hover:not(:disabled){background:rgba(255,255,255,.26)}
+.hero-nav-btn:disabled{opacity:.32;cursor:not-allowed}
+.hero-cal{position:relative;display:flex}
+.hero-cal input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none}
+.hero-cal input::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.hero-ops{text-align:right}
 .hero-ops-v{font-size:42px;font-weight:800;color:#fff;line-height:1}
 .hero-ops-l{font-size:10px;font-weight:700;color:rgba(255,255,255,.78);
   text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
@@ -178,6 +248,37 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .chart-empty{height:200px;display:flex;align-items:center;justify-content:center;
   color:var(--tx3);font-size:12px;font-weight:600}
 
+/* ══ RANKING ══ */
+.rank-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);
+  padding:16px 19px;box-shadow:var(--sh);margin-bottom:4px}
+.rank-head{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  cursor:pointer;user-select:none}
+.rank-head-right{display:flex;align-items:center;gap:14px;flex-shrink:0}
+.rank-lead{font-size:11px;font-weight:700;color:var(--tx2);white-space:nowrap}
+.rank-lead b{color:var(--acc)}
+.rank-arrow{font-size:13px;color:var(--tx3);transition:transform .2s}
+.rank-arrow.open{transform:rotate(90deg)}
+.rk-list{display:flex;flex-direction:column;gap:8px;margin-top:15px}
+.rk-item{display:flex;align-items:center;gap:13px;padding:11px 14px;
+  background:var(--sf2);border:1px solid var(--bd);border-radius:10px;transition:border-color .15s}
+.rk-item:hover{border-color:var(--bd2)}
+.rk-pos{width:27px;height:27px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;background:var(--sf3);color:var(--tx2);flex-shrink:0;
+  font-variant-numeric:tabular-nums}
+.rk-pos.p1{background:#166534;color:#fff}
+.rk-pos.p2{background:#16a34a;color:#fff}
+.rk-pos.p3{background:#65a30d;color:#fff}
+.rk-av{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:#fff;flex-shrink:0}
+.rk-info{min-width:0;flex:1}
+.rk-name{font-size:13px;font-weight:700;color:var(--tx)}
+.rk-sub{font-size:11px;color:var(--tx2);font-weight:500;margin-top:2px}
+.rk-bar-track{height:4px;background:var(--bd);border-radius:2px;margin-top:8px;overflow:hidden;max-width:340px}
+.rk-bar-fill{height:4px;border-radius:2px;background:var(--acc);transition:width .6s ease}
+.rk-val{text-align:right;flex-shrink:0}
+.rk-num{font-size:19px;font-weight:800;color:var(--acc);font-variant-numeric:tabular-nums}
+.rk-lbl{font-size:10px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+
 .foot{margin-top:26px;text-align:center;font-size:10px;color:var(--tx3);font-weight:600}
 
 /* ══ LOADING ══ */
@@ -207,8 +308,10 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 }
 @media(max-width:560px){
   .hero{flex-wrap:wrap;gap:14px;padding:18px}
-  .hero-ops{margin-left:0;text-align:left;width:100%;
+  .hero-right{margin-left:0;width:100%;align-items:stretch;
     border-top:1px solid rgba(255,255,255,.18);padding-top:12px}
+  .hero-nav{justify-content:flex-start}
+  .hero-ops{text-align:left}
   .hero-day{font-size:44px}
 }
 </style>
@@ -236,11 +339,23 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 
   <div class="filter-bar">
     <div class="prow" id="prow"></div>
-    <div class="date-filter">
-      <span class="date-ico">📅</span>
-      <input type="date" id="date-picker" onchange="onDatePick()">
-      <button class="date-clear" id="date-clear" style="display:none" onclick="clearDatePick()">✕ Limpiar</button>
+    <div class="right-filters">
+      <select class="fsel" id="sel-ctrl" onchange="onCtrlFilter()" title="Filtrar por controlador">
+        <option value="">Todos los controladores</option>
+      </select>
+      <select class="fsel" id="sel-comp" onchange="onCompFilter()" title="Filtrar por empresa">
+        <option value="">Todas las empresas</option>
+      </select>
+      <button class="clear-ent" id="clear-ent" style="display:none" onclick="clearEntityFilters()">✕ Limpiar filtros</button>
     </div>
+  </div>
+
+  <div class="range-row" id="range-row" style="display:none">
+    <span class="range-lbl">📆 Rango personalizado:</span>
+    <span class="range-lbl">Desde</span>
+    <input type="date" id="range-from" class="range-inp" onchange="onRangeChange()">
+    <span class="range-lbl">Hasta</span>
+    <input type="date" id="range-to" class="range-inp" onchange="onRangeChange()">
   </div>
 
   <div class="hero">
@@ -249,14 +364,46 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
       <div class="hero-dow" id="hero-dow">—</div>
       <div class="hero-month" id="hero-month">—</div>
     </div>
-    <div class="hero-ops">
-      <div class="hero-ops-v num" id="hero-ops">0</div>
-      <div class="hero-ops-l" id="hero-ops-l">Rutas cerradas</div>
-      <div class="hero-range" id="hero-range"></div>
+    <div class="hero-right">
+      <div class="hero-nav">
+        <button class="hero-nav-btn" onclick="stepDay(-1)" title="Día anterior">‹</button>
+        <div class="hero-cal" title="Elegir fecha">
+          <button class="hero-nav-btn" type="button">📅</button>
+          <input type="date" id="date-picker" onchange="onDatePick()">
+        </div>
+        <button class="hero-nav-btn" id="day-next" onclick="stepDay(1)" title="Día siguiente">›</button>
+      </div>
+      <div class="hero-ops">
+        <div class="hero-ops-v num" id="hero-ops">0</div>
+        <div class="hero-ops-l" id="hero-ops-l">Rutas cerradas</div>
+        <div class="hero-range" id="hero-range"></div>
+      </div>
     </div>
   </div>
 
   <div class="kpi-grid" id="kpi-grid"></div>
+
+  <div class="rank-card">
+    <div class="rank-head" onclick="toggleRank()">
+      <div>
+        <div class="chart-title">Ranking de controladores</div>
+        <div class="chart-sub" id="rank-sub">Por bultos del período</div>
+      </div>
+      <div class="rank-head-right">
+        <span class="rank-lead" id="rank-lead"></span>
+        <span class="rank-arrow" id="rank-arrow">▸</span>
+      </div>
+    </div>
+    <div class="rank-body" id="rank-body" style="display:none">
+      <div class="metric-tabs rank-metric" id="rank-metric-tabs">
+        <button class="metric-tab on" data-rm="bultos" onclick="setRankMetric('bultos')">Bultos</button>
+        <button class="metric-tab" data-rm="rutas" onclick="setRankMetric('rutas')">Rutas</button>
+        <button class="metric-tab" data-rm="pi" onclick="setRankMetric('pi')">Picking</button>
+        <button class="metric-tab" data-rm="sa" onclick="setRankMetric('sa')">SA</button>
+      </div>
+      <div class="rk-list" id="rk-list"></div>
+    </div>
+  </div>
 
   <div class="charts">
     <!-- DONUT — bultos por empresa -->
@@ -299,6 +446,28 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
     </div>
   </div>
 
+  <div class="table-card">
+    <div class="table-head" onclick="toggleTable()">
+      <div>
+        <div class="chart-title">Detalle de registros</div>
+        <div class="chart-sub" id="table-sub">—</div>
+      </div>
+      <span class="table-arrow" id="table-arrow">▸</span>
+    </div>
+    <div class="table-body" id="table-body" style="display:none">
+      <div class="table-actions">
+        <input class="table-search" id="table-search" placeholder="🔍 Buscar ruta, controlador, obs..." oninput="onTableSearch(this.value)">
+        <button class="btn-excel" onclick="exportExcel()">⬇ Exportar Excel</button>
+      </div>
+      <div class="table-scroll">
+        <table class="dtable">
+          <thead id="dt-head"></thead>
+          <tbody id="dt-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <div class="foot" id="foot">Solo lectura · sincronizado en tiempo real con Firebase</div>
 </div>
 
@@ -306,13 +475,19 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 /* ══════════ ESTADO ══════════ */
 let allRecs=[], companies=null;
 let period='hoy', lineMetric='bultos', specificDate=null;
+let ctrlFilter=null, compFilter=null;
+let rangeFrom=null, rangeTo=null, rankMetric='bultos';
+let tableSearch='';
 let recsReady=false;
 let donutChart=null, lineChart=null, barChart=null;
 
-const PERIODS=[{k:'hoy',l:'Hoy'},{k:'semana',l:'Semana'},{k:'mes',l:'Mes'},{k:'todo',l:'Todo'}];
+const PERIODS=[{k:'hoy',l:'Hoy'},{k:'semana',l:'Semana'},{k:'mes',l:'Mes'},{k:'rango',l:'Rango'},{k:'todo',l:'Todo'}];
 const DOW=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MONTH=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
 const PALETTE=['#166534','#16a34a','#65a30d','#0d9488','#ca8a04','#0891b2','#4d7c0f','#15803d','#84cc16','#059669'];
+const AV_COLORS=['#166534','#0d9488','#0891b2','#7c3aed','#db2777','#ea580c','#ca8a04','#2563eb','#65a30d','#0e7490'];
+function initials(n){ return (n||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?'; }
+function avColor(n){ let h=0; for(const c of (n||'')) h=(h*31+c.charCodeAt(0))&0xffff; return AV_COLORS[h%AV_COLORS.length]; }
 
 /* ══════════ JORNADA (idéntico a la app — corte 14:30) ══════════ */
 function jornadaDate(){
@@ -324,6 +499,9 @@ function jornadaDate(){
 function fmtDate(d){ return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; }
 function jornadaStr(){ return fmtDate(jornadaDate()); }
 function parseFecha(f){ const [d,m,y]=f.split('/').map(Number); return new Date(y,m-1,d); }
+function ymdToDate(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function dateToYmd(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fmtShort(d){ return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`; }
 
 /* ══════════ DURACIÓN ══════════ */
 function calcMin(s,e){
@@ -354,13 +532,19 @@ function filterByPrevPeriod(recs,p){
 }
 
 /* ══════════ KPIs ══════════ */
-function computeKPIs(recs){
+function computeKPIs(recs,compKey){
   let pi=0,sa=0,bultos=0,durSum=0,durCount=0;
   recs.forEach(r=>{
-    for(const k in r){
-      if(k.endsWith('_pi')) pi+=Number(r[k])||0;
-      else if(k.endsWith('_sa')) sa+=Number(r[k])||0;
-      else if(k.endsWith('_bultos')) bultos+=Number(r[k])||0;
+    if(compKey){
+      pi+=Number(r[compKey+'_pi'])||0;
+      sa+=Number(r[compKey+'_sa'])||0;
+      bultos+=Number(r[compKey+'_bultos'])||0;
+    } else {
+      for(const k in r){
+        if(k.endsWith('_pi')) pi+=Number(r[k])||0;
+        else if(k.endsWith('_sa')) sa+=Number(r[k])||0;
+        else if(k.endsWith('_bultos')) bultos+=Number(r[k])||0;
+      }
     }
     const d=calcMin(r.hora_ini,r.hora_fin);
     if(d){ durSum+=d; durCount++; }
@@ -389,9 +573,48 @@ function companyList(){
   allRecs.forEach(r=>{ for(const k in r){ if(k.endsWith('_bultos')) keys.add(k.replace('_bultos','')); } });
   return [...keys].map((k,i)=>({key:k,name:k.charAt(0).toUpperCase()+k.slice(1),color:PALETTE[i%PALETTE.length]}));
 }
+function compName(key){ const c=companyList().find(c=>c.key===key); return c?c.name:key; }
+
+/* ══════════ FILTROS DE ENTIDAD (controlador / empresa) ══════════ */
+function applyEntityFilters(recs){
+  let out=recs;
+  if(ctrlFilter) out=out.filter(r=>r.ctrl===ctrlFilter);
+  if(compFilter) out=out.filter(r=>
+    ((Number(r[compFilter+'_pi'])||0)+(Number(r[compFilter+'_sa'])||0)+(Number(r[compFilter+'_bultos'])||0))>0);
+  return out;
+}
+function populateFilters(){
+  const ctrls=[...new Set(allRecs.map(r=>r.ctrl).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const selC=document.getElementById('sel-ctrl');
+  if(ctrlFilter && !ctrls.includes(ctrlFilter)) ctrlFilter=null;
+  selC.innerHTML='<option value="">Todos los controladores</option>'+
+    ctrls.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('');
+  selC.value=ctrlFilter||'';
+
+  const comps=companyList();
+  const selE=document.getElementById('sel-comp');
+  if(compFilter && !comps.find(c=>c.key===compFilter)) compFilter=null;
+  selE.innerHTML='<option value="">Todas las empresas</option>'+
+    comps.map(c=>`<option value="${c.key}">${c.name}</option>`).join('');
+  selE.value=compFilter||'';
+  updateFilterUI();
+}
+function updateFilterUI(){
+  document.getElementById('sel-ctrl').classList.toggle('active',!!ctrlFilter);
+  document.getElementById('sel-comp').classList.toggle('active',!!compFilter);
+  document.getElementById('clear-ent').style.display=(ctrlFilter||compFilter)?'inline-flex':'none';
+}
+function onCtrlFilter(){ ctrlFilter=document.getElementById('sel-ctrl').value||null; updateFilterUI(); render(); }
+function onCompFilter(){ compFilter=document.getElementById('sel-comp').value||null; updateFilterUI(); render(); }
+function clearEntityFilters(){
+  ctrlFilter=null; compFilter=null;
+  document.getElementById('sel-ctrl').value='';
+  document.getElementById('sel-comp').value='';
+  updateFilterUI(); render();
+}
 
 /* ══════════ SERIE DIARIA ══════════ */
-function lastNDaysSeries(recs,n,anchorDate){
+function lastNDaysSeries(recs,n,anchorDate,compKey){
   const anchor=anchorDate||jornadaDate();
   const days=[];
   for(let i=n-1;i>=0;i--){ const d=new Date(anchor); d.setDate(d.getDate()-i); days.push(d); }
@@ -400,10 +623,16 @@ function lastNDaysSeries(recs,n,anchorDate){
   recs.forEach(r=>{
     const cell=map[r.fecha]; if(!cell) return;
     cell.rutas++;
-    for(const k in r){
-      if(k.endsWith('_pi')) cell.pi+=Number(r[k])||0;
-      else if(k.endsWith('_sa')) cell.sa+=Number(r[k])||0;
-      else if(k.endsWith('_bultos')) cell.bultos+=Number(r[k])||0;
+    if(compKey){
+      cell.pi+=Number(r[compKey+'_pi'])||0;
+      cell.sa+=Number(r[compKey+'_sa'])||0;
+      cell.bultos+=Number(r[compKey+'_bultos'])||0;
+    } else {
+      for(const k in r){
+        if(k.endsWith('_pi')) cell.pi+=Number(r[k])||0;
+        else if(k.endsWith('_sa')) cell.sa+=Number(r[k])||0;
+        else if(k.endsWith('_bultos')) cell.bultos+=Number(r[k])||0;
+      }
     }
   });
   const labels=days.map(d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`);
@@ -450,6 +679,103 @@ function centerTextPlugin(total){
   };
 }
 
+/* ══════════ TABLA DE DETALLE + EXCEL ══════════ */
+function rowTotals(r){
+  if(compFilter) return {pi:Number(r[compFilter+'_pi'])||0,sa:Number(r[compFilter+'_sa'])||0,bultos:Number(r[compFilter+'_bultos'])||0};
+  let pi=0,sa=0,b=0;
+  for(const k in r){
+    if(k.endsWith('_pi')) pi+=Number(r[k])||0;
+    else if(k.endsWith('_sa')) sa+=Number(r[k])||0;
+    else if(k.endsWith('_bultos')) b+=Number(r[k])||0;
+  }
+  return {pi,sa,bultos:b};
+}
+function getTableRows(){
+  let rows=applyEntityFilters(computePartition().cur);
+  if(tableSearch){
+    const q=tableSearch.toLowerCase();
+    rows=rows.filter(r=>
+      String(r.id_ruta||'').toLowerCase().includes(q) ||
+      (r.ctrl||'').toLowerCase().includes(q) ||
+      (r.obs||'').toLowerCase().includes(q));
+  }
+  return rows.slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+}
+function onTableSearch(v){ tableSearch=v.trim(); renderTable(); }
+function toggleTable(){
+  const body=document.getElementById('table-body');
+  const arrow=document.getElementById('table-arrow');
+  const open=body.style.display==='none';
+  body.style.display=open?'block':'none';
+  arrow.classList.toggle('open',open);
+}
+function renderTable(){
+  const head=document.getElementById('dt-head'), body=document.getElementById('dt-body');
+  if(!head||!body) return;
+  const sc=compFilter?' '+compName(compFilter):'';
+  head.innerHTML=`<tr><th>Fecha</th><th>ID Ruta</th><th>Controlador</th><th>Inicio</th><th>Fin</th>
+    <th>Duración</th><th>PI${sc}</th><th>SA${sc}</th><th>Bultos${sc}</th><th>Observaciones</th></tr>`;
+  const rows=getTableRows();
+  document.getElementById('table-sub').textContent=`${rows.length} registro${rows.length!==1?'s':''} · ${activeLabel()}`;
+  if(!rows.length){
+    body.innerHTML=`<tr><td colspan="10" class="dt-empty">Sin registros para los filtros actuales</td></tr>`;
+    return;
+  }
+  body.innerHTML=rows.map(r=>{
+    const t=rowTotals(r);
+    const dur=calcMin(r.hora_ini,r.hora_fin);
+    const obs=r.obs
+      ? `<span class="dt-obs" title="${(r.obs||'').replace(/"/g,'&quot;')}">${r.obs}</span>`
+      : '<span class="dt-z">—</span>';
+    return `<tr>
+      <td>${r.fecha}</td>
+      <td style="font-weight:800">${r.id_ruta||''}</td>
+      <td style="font-variant-numeric:normal">${r.ctrl||''}</td>
+      <td>${r.hora_ini||'<span class="dt-z">—</span>'}</td>
+      <td>${r.hora_fin||'<span class="dt-z">—</span>'}</td>
+      <td style="color:var(--grn)">${fmtMin(dur)}</td>
+      <td class="${t.pi?'':'dt-z'}">${t.pi}</td>
+      <td class="${t.sa?'':'dt-z'}">${t.sa}</td>
+      <td style="color:${t.bultos?'var(--ylw)':'var(--tx3)'};font-weight:700">${t.bultos}</td>
+      <td>${obs}</td>
+    </tr>`;
+  }).join('');
+}
+function exportExcel(){
+  if(typeof XLSX==='undefined'){
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=doExport;
+    s.onerror=()=>alert('No se pudo cargar la librería de Excel. Probá con conexión a internet.');
+    document.head.appendChild(s);
+    return;
+  }
+  doExport();
+}
+function doExport(){
+  const rows=getTableRows();
+  if(!rows.length){ alert('No hay registros para exportar con los filtros actuales.'); return; }
+  const comps=companyList();
+  const compHeaders=comps.flatMap(c=>[`PI ${c.name}`,`SA ${c.name}`,`Bultos ${c.name}`]);
+  const header=['Fecha','ID Ruta','Controlador','Hora Inicio','Hora Fin','Duración (min)',
+    ...compHeaders,'Observaciones','Preparadores'];
+  const data=rows.map(r=>{
+    const dur=calcMin(r.hora_ini,r.hora_fin);
+    const compData=comps.flatMap(c=>[Number(r[c.key+'_pi'])||0,Number(r[c.key+'_sa'])||0,Number(r[c.key+'_bultos'])||0]);
+    const preps=(r.preparadores||[]).map(p=>`${p.nombre} ${p.cantidad>0?'+':''}${p.cantidad}`).join(' | ');
+    return [r.fecha,r.id_ruta||'',r.ctrl||'',r.hora_ini||'',r.hora_fin||'',dur||'',...compData,r.obs||'',preps];
+  });
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([header,...data]);
+  ws['!cols']=[{wch:12},{wch:10},{wch:18},{wch:10},{wch:10},{wch:14},
+    ...comps.flatMap(()=>[{wch:13},{wch:13},{wch:13}]),{wch:32},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws,'Detalle');
+  const label=(period==='rango'&&rangeFrom&&rangeTo)?`${dateToYmd(rangeFrom)}_a_${dateToYmd(rangeTo)}`
+    : specificDate?specificDate.replace(/\//g,'-')
+    : period;
+  XLSX.writeFile(wb,`Control_Pallets_${label}.xlsx`);
+}
+
 /* ══════════ RENDER ══════════ */
 function renderProw(){
   document.getElementById('prow').innerHTML=PERIODS.map(p=>
@@ -459,29 +785,75 @@ function renderProw(){
 function setPeriod(p){
   period=p; specificDate=null;
   document.getElementById('date-picker').value='';
-  document.getElementById('date-clear').style.display='none';
-  renderProw(); render();
+  if(p==='rango'){
+    if(!rangeFrom||!rangeTo){
+      const to=jornadaDate(); const from=new Date(to); from.setDate(from.getDate()-2);
+      rangeFrom=from; rangeTo=to;
+    }
+    setRangeInputs();
+  } else { rangeFrom=null; rangeTo=null; }
+  renderProw(); updateDateControls(); updateDayNav(); render();
 }
 function onDatePick(){
   const v=document.getElementById('date-picker').value; // yyyy-mm-dd
   if(!v){ specificDate=null; }
-  else { const [y,m,d]=v.split('-'); specificDate=`${d}/${m}/${y}`; }
-  document.getElementById('date-clear').style.display=specificDate?'inline-flex':'none';
-  renderProw(); render();
+  else { const [y,m,d]=v.split('-'); specificDate=`${d}/${m}/${y}`;
+    period='hoy'; rangeFrom=null; rangeTo=null; } // entrar en modo día
+  renderProw(); updateDateControls(); updateDayNav(); render();
 }
-function clearDatePick(){
-  specificDate=null;
-  document.getElementById('date-picker').value='';
-  document.getElementById('date-clear').style.display='none';
-  renderProw(); render();
+function stepDay(dir){
+  let base=specificDate?parseFecha(specificDate):(rangeTo||jornadaDate());
+  base=new Date(base); base.setDate(base.getDate()+dir);
+  const today=jornadaDate();
+  if(base.getTime()>today.getTime()) base=today;
+  specificDate=fmtDate(base);
+  period='hoy'; rangeFrom=null; rangeTo=null;
+  document.getElementById('date-picker').value=dateToYmd(base);
+  renderProw(); updateDateControls(); updateDayNav(); render();
+}
+function onRangeChange(){
+  const fv=document.getElementById('range-from').value;
+  const tv=document.getElementById('range-to').value;
+  rangeFrom=fv?ymdToDate(fv):null;
+  rangeTo  =tv?ymdToDate(tv):null;
+  if(rangeFrom&&rangeTo&&rangeFrom.getTime()>rangeTo.getTime()){
+    const t=rangeFrom; rangeFrom=rangeTo; rangeTo=t; setRangeInputs();
+  }
+  render();
+}
+function setRangeInputs(){
+  if(rangeFrom) document.getElementById('range-from').value=dateToYmd(rangeFrom);
+  if(rangeTo)   document.getElementById('range-to').value=dateToYmd(rangeTo);
+}
+function updateDateControls(){
+  document.getElementById('range-row').style.display=(period==='rango')?'flex':'none';
+}
+function updateDayNav(){
+  const next=document.getElementById('day-next');
+  if(!next) return;
+  const today=jornadaDate();
+  const cur=specificDate?parseFecha(specificDate):today;
+  next.disabled=cur.getTime()>=today.getTime();
 }
 function activeLabel(){
-  return specificDate ? `Día ${specificDate}` : periodRangeLabel(period);
+  let base;
+  if(period==='rango'&&rangeFrom&&rangeTo) base=`${fmtShort(rangeFrom)} → ${fmtShort(rangeTo)}`;
+  else if(specificDate) base=`Día ${specificDate}`;
+  else base=periodRangeLabel(period);
+  const ex=[];
+  if(ctrlFilter) ex.push(ctrlFilter);
+  if(compFilter) ex.push(compName(compFilter));
+  return ex.length ? base+' · '+ex.join(' · ') : base;
 }
 function setMetric(m){
   lineMetric=m;
-  document.querySelectorAll('.metric-tab').forEach(t=>t.classList.toggle('on',t.dataset.m===m));
-  renderLine(specificDate?parseFecha(specificDate):jornadaDate());
+  document.querySelectorAll('#metric-tabs .metric-tab').forEach(t=>t.classList.toggle('on',t.dataset.m===m));
+  renderLine(buildSeries(applyEntityFilters(allRecs), compFilter));
+}
+function setRankMetric(m){
+  rankMetric=m;
+  document.querySelectorAll('#rank-metric-tabs .metric-tab').forEach(t=>t.classList.toggle('on',t.dataset.rm===m));
+  renderRanking(applyEntityFilters(computePartition().cur));
 }
 function periodRangeLabel(p){
   const now=new Date();
@@ -492,6 +864,74 @@ function periodRangeLabel(p){
   return 'Todos los registros';
 }
 
+function byRange(recs,f,t){
+  const a=f.getTime(), b=t.getTime();
+  return recs.filter(r=>{ const d=parseFecha(r.fecha).getTime(); return d>=a&&d<=b; });
+}
+function computePartition(){
+  let cur, prev, anchor, hasPrev=true;
+  if(period==='rango'&&rangeFrom&&rangeTo){
+    cur=byRange(allRecs,rangeFrom,rangeTo);
+    const len=Math.round((rangeTo.getTime()-rangeFrom.getTime())/86400000)+1;
+    const pf=new Date(rangeFrom); pf.setDate(pf.getDate()-len);
+    const pt=new Date(rangeFrom); pt.setDate(pt.getDate()-1);
+    prev=byRange(allRecs,pf,pt);
+    anchor=rangeTo;
+  } else if(specificDate){
+    cur=allRecs.filter(r=>r.fecha===specificDate);
+    const pd=parseFecha(specificDate); const prevD=new Date(pd); prevD.setDate(prevD.getDate()-1);
+    prev=allRecs.filter(r=>r.fecha===fmtDate(prevD));
+    anchor=pd;
+  } else {
+    cur=filterByPeriod(allRecs,period); prev=filterByPrevPeriod(allRecs,period);
+    anchor=jornadaDate(); hasPrev=(period!=='todo');
+  }
+  return {cur,prev,anchor,hasPrev};
+}
+function buildSeries(recs,compKey){
+  let days=[], sub='';
+  if(period==='rango'&&rangeFrom&&rangeTo){
+    const d=new Date(rangeFrom);
+    while(d.getTime()<=rangeTo.getTime()){ days.push(new Date(d)); d.setDate(d.getDate()+1); }
+    if(days.length>60) days=days.slice(days.length-60);
+    sub=`${fmtShort(rangeFrom)} → ${fmtShort(rangeTo)}`;
+  } else if(specificDate){
+    const a=parseFecha(specificDate);
+    for(let i=6;i>=0;i--){ const x=new Date(a); x.setDate(x.getDate()-i); days.push(x); }
+    sub=`7 días hasta ${specificDate}`;
+  } else {
+    const n=(period==='mes'||period==='todo')?30:7;
+    const a=jornadaDate();
+    for(let i=n-1;i>=0;i--){ const x=new Date(a); x.setDate(x.getDate()-i); days.push(x); }
+    sub=`Últimos ${n} días`;
+  }
+  const map={};
+  days.forEach(x=>{ map[fmtDate(x)]={pi:0,sa:0,bultos:0,rutas:0}; });
+  recs.forEach(r=>{
+    const cell=map[r.fecha]; if(!cell) return;
+    cell.rutas++;
+    if(compKey){
+      cell.pi+=Number(r[compKey+'_pi'])||0;
+      cell.sa+=Number(r[compKey+'_sa'])||0;
+      cell.bultos+=Number(r[compKey+'_bultos'])||0;
+    } else {
+      for(const k in r){
+        if(k.endsWith('_pi')) cell.pi+=Number(r[k])||0;
+        else if(k.endsWith('_sa')) cell.sa+=Number(r[k])||0;
+        else if(k.endsWith('_bultos')) cell.bultos+=Number(r[k])||0;
+      }
+    }
+  });
+  return {
+    labels:days.map(fmtShort),
+    pi:days.map(x=>map[fmtDate(x)].pi),
+    sa:days.map(x=>map[fmtDate(x)].sa),
+    bultos:days.map(x=>map[fmtDate(x)].bultos),
+    rutas:days.map(x=>map[fmtDate(x)].rutas),
+    sub
+  };
+}
+
 function renderHero(cur,anchor){
   const jd=anchor||jornadaDate();
   document.getElementById('hero-day').textContent=String(jd.getDate()).padStart(2,'0');
@@ -499,12 +939,14 @@ function renderHero(cur,anchor){
   document.getElementById('hero-month').textContent=`${MONTH[jd.getMonth()]} ${jd.getFullYear()}`;
   document.getElementById('hero-ops').textContent=cur.length;
   document.getElementById('hero-ops-l').textContent=
-    specificDate?'Rutas cerradas':(period==='hoy'?'Rutas cerradas hoy':'Rutas en el período');
+    (period==='rango'&&rangeFrom&&rangeTo)?'Rutas en el rango':
+    specificDate?'Rutas cerradas':
+    (period==='hoy'?'Rutas cerradas hoy':'Rutas en el período');
   document.getElementById('hero-range').textContent=activeLabel();
 }
 
 function renderKPIs(cur,prev,hasPrev){
-  const c=computeKPIs(cur), p=computeKPIs(prev);
+  const c=computeKPIs(cur,compFilter), p=computeKPIs(prev,compFilter);
   const cards=[
     {lbl:'Rutas cerradas',val:c.rutas, prev:p.rutas, hb:true},
     {lbl:'Total PI',      val:c.pi,    prev:p.pi,    hb:true},
@@ -525,7 +967,7 @@ function renderKPIs(cur,prev,hasPrev){
 }
 
 function renderDonut(cur){
-  const comps=companyList();
+  const comps=compFilter?companyList().filter(c=>c.key===compFilter):companyList();
   const data=comps.map(c=>cur.reduce((s,r)=>s+(Number(r[c.key+'_bultos'])||0),0));
   const total=data.reduce((a,b)=>a+b,0);
   document.getElementById('donut-sub').textContent=activeLabel();
@@ -557,12 +999,9 @@ function renderDonut(cur){
   }).join('');
 }
 
-function renderLine(anchor){
-  const n=specificDate?7:((period==='mes'||period==='todo')?30:7);
-  const s=lastNDaysSeries(allRecs,n,anchor);
+function renderLine(s){
   const mLbl={bultos:'Bultos',pi:'PI',sa:'SA'}[lineMetric];
-  document.getElementById('line-sub').textContent=
-    specificDate?`7 días hasta ${specificDate} · ${mLbl}`:`Últimos ${n} días · ${mLbl}`;
+  document.getElementById('line-sub').textContent=`${s.sub} · ${mLbl}`;
   if(lineChart){ lineChart.destroy(); lineChart=null; }
   const ctx=document.getElementById('line').getContext('2d');
   const grad=ctx.createLinearGradient(0,0,0,236);
@@ -581,10 +1020,8 @@ function renderLine(anchor){
   });
 }
 
-function renderBars(anchor){
-  const s=lastNDaysSeries(allRecs,7,anchor);
-  document.getElementById('bars-sub').textContent=
-    specificDate?`7 días hasta ${specificDate}`:'Últimos 7 días';
+function renderBars(s){
+  document.getElementById('bars-sub').textContent=s.sub;
   if(barChart){ barChart.destroy(); barChart=null; }
   const ctx=document.getElementById('bars').getContext('2d');
   barChart=new Chart(ctx,{
@@ -600,24 +1037,76 @@ function renderBars(anchor){
   });
 }
 
+function toggleRank(){
+  const body=document.getElementById('rank-body');
+  const arrow=document.getElementById('rank-arrow');
+  const open=body.style.display==='none';
+  body.style.display=open?'block':'none';
+  arrow.classList.toggle('open',open);
+}
+function renderRanking(cur){
+  const map={};
+  cur.forEach(r=>{
+    const o=map[r.ctrl]||(map[r.ctrl]={name:r.ctrl,rutas:0,pi:0,sa:0,bultos:0,durSum:0,durCount:0});
+    o.rutas++;
+    if(compFilter){
+      o.pi+=Number(r[compFilter+'_pi'])||0;
+      o.sa+=Number(r[compFilter+'_sa'])||0;
+      o.bultos+=Number(r[compFilter+'_bultos'])||0;
+    } else {
+      for(const k in r){
+        if(k.endsWith('_pi')) o.pi+=Number(r[k])||0;
+        else if(k.endsWith('_sa')) o.sa+=Number(r[k])||0;
+        else if(k.endsWith('_bultos')) o.bultos+=Number(r[k])||0;
+      }
+    }
+    const d=calcMin(r.hora_ini,r.hora_fin); if(d){ o.durSum+=d; o.durCount++; }
+  });
+  const mLbl={bultos:'Bultos',rutas:'Rutas',pi:'Picking',sa:'SA'}[rankMetric];
+  const list=Object.values(map).sort((a,b)=>b[rankMetric]-a[rankMetric]);
+  document.getElementById('rank-sub').textContent=`Por ${mLbl.toLowerCase()} · ${activeLabel()} · ${list.length} controlador${list.length!==1?'es':''}`;
+  const leadEl=document.getElementById('rank-lead');
+  leadEl.innerHTML = list.length
+    ? `Líder: <b>${list[0].name}</b> · ${list[0][rankMetric].toLocaleString('es-AR')} ${mLbl.toLowerCase()}`
+    : '';
+  const el=document.getElementById('rk-list');
+  if(!list.length){ el.innerHTML='<div class="chart-empty">Sin actividad en este período</div>'; return; }
+  const max=list[0][rankMetric]||1;
+  el.innerHTML=list.map((c,i)=>{
+    const posCls=i===0?'p1':i===1?'p2':i===2?'p3':'';
+    const avg=c.durCount?Math.round(c.durSum/c.durCount):0;
+    const val=c[rankMetric];
+    const pct=Math.round(val/max*100);
+    return `<div class="rk-item">
+      <div class="rk-pos ${posCls}">${i+1}</div>
+      <div class="rk-av" style="background:${avColor(c.name)}">${initials(c.name)}</div>
+      <div class="rk-info">
+        <div class="rk-name">${c.name}</div>
+        <div class="rk-sub">${c.rutas} ruta${c.rutas!==1?'s':''} · PI ${c.pi} · SA ${c.sa}${avg?' · prom '+avg+'m':''}</div>
+        <div class="rk-bar-track"><div class="rk-bar-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="rk-val">
+        <div class="rk-num num">${val.toLocaleString('es-AR')}</div>
+        <div class="rk-lbl">${mLbl}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function render(){
   if(!recsReady) return;
-  let cur, prev, anchor, hasPrev;
-  if(specificDate){
-    cur=allRecs.filter(r=>r.fecha===specificDate);
-    const pd=parseFecha(specificDate); const prevD=new Date(pd); prevD.setDate(prevD.getDate()-1);
-    prev=allRecs.filter(r=>r.fecha===fmtDate(prevD));
-    anchor=pd; hasPrev=true;
-  } else {
-    cur=filterByPeriod(allRecs,period); prev=filterByPrevPeriod(allRecs,period);
-    anchor=jornadaDate(); hasPrev=(period!=='todo');
-  }
-  renderHero(cur,anchor);
-  renderKPIs(cur,prev,hasPrev);
+  const part=computePartition();
+  const cur=applyEntityFilters(part.cur);
+  const prev=applyEntityFilters(part.prev);
+  renderHero(cur,part.anchor);
+  renderKPIs(cur,prev,part.hasPrev);
+  renderRanking(cur);
+  renderTable();
   if(typeof Chart!=='undefined'){
+    const series=buildSeries(applyEntityFilters(allRecs), compFilter);
     renderDonut(cur);
-    renderLine(anchor);
-    renderBars(anchor);
+    renderLine(series);
+    renderBars(series);
   } else {
     setTimeout(render,250); return;
   }
@@ -643,9 +1132,10 @@ function hideLoading(){
 
 function start(){
   renderProw(); setSync(navigator.onLine);
+  updateDateControls(); updateDayNav();
   if(window.DB_READY){
-    window.DB.onRecs(recs=>{ allRecs=recs; recsReady=true; hideLoading(); render(); });
-    window.DB.onCompanies(c=>{ companies=c; if(recsReady) render(); });
+    window.DB.onRecs(recs=>{ allRecs=recs; recsReady=true; hideLoading(); populateFilters(); render(); });
+    window.DB.onCompanies(c=>{ companies=c; populateFilters(); if(recsReady) render(); });
   } else {
     setTimeout(()=>{ hideLoading(); render(); },4000);
   }
