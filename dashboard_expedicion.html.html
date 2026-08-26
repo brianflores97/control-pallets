@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Expedición CDR — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.20.3/xlsx.full.min.js"></script>
+<!-- Firebase (SOLO LECTURA) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#F4F1E7; --sf:#FFFFFF; --sf2:#FAF7EE; --sf3:#F1ECDD;
+  --bd:#E6DECB; --bd2:#D8CDB2;
+  --pino:#1B4332; --pino2:#0F2E20; --acc:#1B4332; --acc2:#2E7D5B;
+  --acc-soft:rgba(27,67,50,.08);
+  --grn:#2E7D5B; --red:#C0492B; --oro:#C9A227; --oro-d:#9A7B12;
+  --tx:#26312B; --tx2:#5B6B60; --tx3:#9AA69C;
+  --r:14px;
+  --sh:0 1px 3px rgba(27,67,50,.06),0 2px 10px rgba(27,67,50,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;font-size:14px;min-height:100vh}
+.num{font-variant-numeric:tabular-nums}
+#topbar{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);padding:0 22px;display:flex;align-items:center;gap:12px;height:56px;flex-wrap:wrap}
+.tb-logo{font-size:14px;font-weight:800;display:flex;align-items:center;gap:10px;color:var(--tx)}
+.tb-logo .li{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--oro),#E0C15A);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--pino)}
+.tb-tag{font-size:9px;font-weight:700;letter-spacing:.7px;color:var(--acc);background:var(--acc-soft);border:1px solid var(--bd2);border-radius:6px;padding:3px 8px;text-transform:uppercase}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.datepick{display:flex;align-items:center;gap:6px;background:var(--sf);border:1px solid var(--bd);border-radius:9px;padding:6px 10px}
+.datepick input{border:none;background:none;font-family:inherit;font-size:12px;font-weight:600;color:var(--tx);outline:none;cursor:pointer;color-scheme:light}
+.hoybtn{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);font-family:inherit;font-size:11px;font-weight:700;padding:7px 11px;border-radius:9px;cursor:pointer}
+.hoybtn:hover{border-color:var(--acc);color:var(--acc)}
+.navday{border:1px solid var(--bd);background:var(--sf);color:var(--tx2);font-family:inherit;font-size:16px;font-weight:700;width:32px;height:32px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.navday:hover:not(:disabled){border-color:var(--acc);color:var(--acc)}
+.navday:disabled{opacity:.35;cursor:not-allowed}
+.sync-pill{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--tx2);border:1px solid var(--bd);border-radius:20px;padding:5px 11px;font-weight:600;background:var(--sf)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--tx3)}
+.sync-dot.on{background:var(--grn);animation:pulse 2s infinite}
+.sync-dot.off{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.wrap{max-width:1260px;margin:0 auto;padding:20px 22px 64px}
+.hero{background:linear-gradient(135deg,var(--pino) 0%,var(--pino2) 100%);border-radius:var(--r);padding:22px 26px;margin-bottom:14px;display:flex;align-items:center;gap:22px;position:relative;overflow:hidden;box-shadow:0 10px 30px rgba(15,46,32,.22)}
+.hero::after{content:'';position:absolute;right:-40px;top:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(201,162,39,.16) 0%,transparent 70%)}
+.hero-day{font-size:54px;font-weight:800;color:#fff;line-height:.9;letter-spacing:-2px}
+.hero-mid{display:flex;flex-direction:column;gap:3px;z-index:1}
+.hero-dow{font-size:18px;font-weight:800;color:#fff;text-transform:capitalize}
+.hero-month{font-size:11px;font-weight:600;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:1.6px}
+.hero-right{margin-left:auto;display:flex;gap:26px;z-index:1;flex-wrap:wrap}
+.hero-stat{text-align:right}
+.hero-stat .v{font-size:38px;font-weight:800;color:#fff;line-height:1}
+.hero-stat .v small{font-size:20px;color:rgba(255,255,255,.6)}
+.hero-stat .l{font-size:10px;font-weight:700;color:rgba(255,255,255,.72);text-transform:uppercase;letter-spacing:.8px;margin-top:3px}
+.hero-stat .v.oro{color:#E0C15A}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:16px}
+.kpi{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px 17px 15px;box-shadow:var(--sh)}
+.kpi-lbl{font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:11px}
+.kpi-val{font-size:30px;font-weight:800;color:var(--tx);line-height:1;letter-spacing:-1px}
+.kpi-val.alerta{color:var(--red)} .kpi-val.oro{color:var(--oro-d)} .kpi-val.grn{color:var(--grn)}
+.rank-card,.chart-card,.table-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh)}
+.rank-card{padding:16px 19px;margin-bottom:16px}
+.card-title{font-size:13px;font-weight:800;color:var(--tx)}
+.card-sub{font-size:10px;color:var(--tx3);font-weight:600;margin-top:2px}
+.rank-head{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;user-select:none}
+.rank-head-right{display:flex;align-items:center;gap:14px;flex-shrink:0}
+.rank-lead{font-size:11px;font-weight:700;color:var(--tx2);white-space:nowrap}
+.rank-lead b{color:var(--acc)}
+.rank-arrow{font-size:13px;color:var(--tx3);transition:transform .2s}
+.rank-arrow.open{transform:rotate(90deg)}
+.metric-tabs{display:flex;gap:3px;background:var(--sf2);border:1px solid var(--bd);border-radius:9px;padding:3px}
+.metric-tab{padding:5px 13px;border:none;background:none;font-family:inherit;font-size:11px;font-weight:700;color:var(--tx2);border-radius:6px;cursor:pointer}
+.metric-tab.on{background:var(--acc);color:#fff}
+.rk-list{display:flex;flex-direction:column;gap:8px;margin-top:15px}
+.rk-item{display:flex;align-items:center;gap:13px;padding:11px 14px;background:var(--sf2);border:1px solid var(--bd);border-radius:10px}
+.rk-pos{width:27px;height:27px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:var(--sf3);color:var(--tx2);flex-shrink:0}
+.rk-pos.p1{background:var(--pino);color:#fff} .rk-pos.p2{background:var(--acc2);color:#fff} .rk-pos.p3{background:var(--oro);color:#fff}
+.rk-av{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0}
+.rk-info{min-width:0;flex:1}
+.rk-name{font-size:13px;font-weight:700;color:var(--tx)}
+.rk-sub{font-size:11px;color:var(--tx2);font-weight:500;margin-top:2px}
+.rk-bar-track{height:4px;background:var(--bd);border-radius:2px;margin-top:8px;overflow:hidden;max-width:340px}
+.rk-bar-fill{height:4px;border-radius:2px;background:var(--acc)}
+.rk-val{text-align:right;flex-shrink:0}
+.rk-num{font-size:19px;font-weight:800;color:var(--acc)}
+.rk-lbl{font-size:10px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.cuenta-legend{display:flex;gap:14px;margin-bottom:13px;flex-wrap:wrap}
+.cl-item{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--tx2)}
+.cl-dot{width:10px;height:10px;border-radius:3px}
+.cuenta-list{display:flex;flex-direction:column;gap:10px}
+.cta{display:flex;align-items:center;gap:11px}
+.cta-name{font-size:12.5px;font-weight:700;color:var(--tx);width:80px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cta-track{flex:1;height:22px;background:var(--sf3);border-radius:6px;overflow:hidden;display:flex}
+.seg{height:100%}.seg.pi{background:#1B4332}.seg.sa{background:#C9A227}.seg.rr{background:#9C6B3F}.seg.ot{background:#B4AE9C}
+.cta-val{font-size:12px;font-weight:800;color:var(--acc);width:34px;text-align:right;flex-shrink:0}
+.charts{display:grid;grid-template-columns:360px 1fr;gap:12px;margin-bottom:16px}
+.charts .full{grid-column:1/-1}
+.chart-card{padding:17px 19px}
+.chart-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap}
+.canvas-wrap{position:relative;height:236px}
+.table-card{padding:16px 19px}
+.table-head{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;user-select:none}
+.table-arrow{font-size:13px;color:var(--tx3);transition:transform .2s}
+.table-arrow.open{transform:rotate(90deg)}
+.table-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:15px 0 13px}
+.table-search{background:var(--sf2);border:1px solid var(--bd);border-radius:9px;padding:8px 13px;font-family:inherit;font-size:12px;font-weight:600;color:var(--tx);outline:none;min-width:220px}
+.btn-excel{background:var(--acc);border:none;border-radius:9px;padding:9px 17px;color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.table-scroll{overflow:auto;max-height:430px;border:1px solid var(--bd);border-radius:10px}
+.dtable{width:100%;border-collapse:collapse;font-size:12px}
+.dtable thead th{position:sticky;top:0;background:var(--sf2);z-index:2;padding:9px 12px;text-align:left;font-weight:700;color:var(--tx2);font-size:10px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;border-bottom:1px solid var(--bd)}
+.dtable td{padding:8px 12px;border-bottom:1px solid var(--bd);white-space:nowrap;font-weight:600;font-variant-numeric:tabular-nums;color:var(--tx)}
+.dtable tbody tr:last-child td{border-bottom:none}
+.dtable tbody tr:hover td{background:var(--sf2)}
+.est{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px}
+.est.fin{background:rgba(46,125,91,.14);color:var(--grn)}.est.lleg{background:rgba(201,162,39,.18);color:var(--oro-d)}.est.pend{background:rgba(192,73,43,.12);color:var(--red)}
+.dt-z{color:var(--tx3)}
+.empty{text-align:center;padding:44px 20px;color:var(--tx3);font-size:13px;font-weight:600}
+.foot{margin-top:26px;text-align:center;font-size:10px;color:var(--tx3);font-weight:600}
+.version{position:fixed;bottom:12px;right:14px;background:var(--pino);color:#E0C15A;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;opacity:.9}
+@media(max-width:900px){.charts{grid-template-columns:1fr}.kpi-grid{grid-template-columns:repeat(2,1fr)}.kpi-grid .kpi:last-child{grid-column:1/-1}}
+@media(max-width:560px){.hero{flex-wrap:wrap}.hero-right{margin-left:0;width:100%;justify-content:space-between}}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <div class="tb-logo"><div class="li">🚚</div>Expedición CDR</div>
+  <span class="tb-tag">Dashboard</span>
+  <div class="tb-right">
+    <button class="navday" id="prevDay" title="Día anterior">‹</button>
+    <div class="datepick"><span style="font-size:13px">📅</span><input type="date" id="datePicker"></div>
+    <button class="navday" id="nextDay" title="Día siguiente">›</button>
+    <button class="hoybtn" id="hoyBtn">Hoy</button>
+    <div class="sync-pill"><div class="sync-dot" id="syncDot"></div><span id="syncTxt">Conectando…</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="hero-day num" id="heroDay">--</div>
+    <div class="hero-mid"><div class="hero-dow" id="heroDow">—</div><div class="hero-month" id="heroMonth">—</div></div>
+    <div class="hero-right">
+      <div class="hero-stat"><div class="v num"><span id="heroDesp">0</span><small>/<span id="heroTot">0</span></small></div><div class="l">Rutas despachadas</div></div>
+      <div class="hero-stat"><div class="v oro num" id="heroPlt">0</div><div class="l">Pallets despachados</div></div>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-lbl">Rutas totales</div><div class="kpi-val num" id="kTot">0</div></div>
+    <div class="kpi"><div class="kpi-lbl">Faltan salir</div><div class="kpi-val alerta num" id="kFaltan">0</div></div>
+    <div class="kpi"><div class="kpi-lbl">Llegadas</div><div class="kpi-val num" id="kLleg">0</div></div>
+    <div class="kpi"><div class="kpi-lbl">Finalizadas</div><div class="kpi-val grn num" id="kFin">0</div></div>
+    <div class="kpi"><div class="kpi-lbl">Prom. carga</div><div class="kpi-val oro num" id="kProm">—</div></div>
+  </div>
+
+  <div class="rank-card">
+    <div class="rank-head" onclick="toggleRank()">
+      <div><div class="card-title">Ranking de cargadores</div><div class="card-sub" id="rankSub">Por pallets despachados · jornada</div></div>
+      <div class="rank-head-right">
+        <span class="rank-lead" id="rankLead"></span>
+        <div class="metric-tabs" id="rankTabs" style="display:none">
+          <button class="metric-tab on" data-m="pallets" onclick="setRank('pallets',event)">Pallets</button>
+          <button class="metric-tab" data-m="rutas" onclick="setRank('rutas',event)">Rutas</button>
+          <button class="metric-tab" data-m="prom" onclick="setRank('prom',event)">Tiempo</button>
+        </div>
+        <span class="rank-arrow" id="rankArrow">▸</span>
+      </div>
+    </div>
+    <div class="rk-list" id="rkList" style="display:none"></div>
+  </div>
+
+  <div class="charts">
+    <div class="chart-card">
+      <div class="chart-head"><div><div class="card-title">Pallets por cuenta</div><div class="card-sub">Composición del despacho · jornada</div></div></div>
+      <div class="cuenta-legend">
+        <span class="cl-item"><span class="cl-dot" style="background:#1B4332"></span>Picking</span>
+        <span class="cl-item"><span class="cl-dot" style="background:#C9A227"></span>Completos</span>
+        <span class="cl-item"><span class="cl-dot" style="background:#9C6B3F"></span>Redespacho</span>
+      </div>
+      <div class="cuenta-list" id="cuentaList"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-head"><div><div class="card-title">Evolución diaria</div><div class="card-sub" id="lineSub">Últimos 7 días</div></div>
+        <div class="metric-tabs" id="lineTabs">
+          <button class="metric-tab on" data-m="rutas" onclick="setLine('rutas')">Rutas</button>
+          <button class="metric-tab" data-m="pallets" onclick="setLine('pallets')">Pallets</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="lineC"></canvas></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-head" onclick="toggleTable()">
+      <div><div class="card-title">Detalle de rutas</div><div class="card-sub" id="tableSub">—</div></div>
+      <span class="table-arrow" id="tableArrow">▸</span>
+    </div>
+    <div id="tableBody" style="display:none">
+      <div class="table-actions">
+        <input class="table-search" id="tableSearch" placeholder="🔍 Buscar ruta, chofer, cargador..." oninput="onSearch(this.value)">
+        <button class="btn-excel" onclick="exportExcel()">⬇ Exportar Excel</button>
+      </div>
+      <div class="table-scroll"><table class="dtable"><thead id="dtHead"></thead><tbody id="dtBody"></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="foot">Solo lectura · sincronizado en tiempo real con Firebase (Firestore · expedicion-cdr)</div>
+</div>
+<div class="version">v2 · conectado</div>
+
+<script>
+/* ═══ FIREBASE (solo lectura) ═══ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBbVgdGtY3bje4Vcs_zBe3rhA0YGHNP24Q",
+  authDomain: "expedicion-cdr.firebaseapp.com",
+  projectId: "expedicion-cdr",
+  storageBucket: "expedicion-cdr.firebasestorage.app",
+  messagingSenderId: "690097871815",
+  appId: "1:690097871815:web:d879a363def8d78a9057e2"
+};
+firebase.initializeApp(firebaseConfig);
+const FS = firebase.firestore();
+let unsub=null;
+
+/* ═══ ESTADO ═══ */
+let RUTAS=[], fecha=hoy(), rankMetric='pallets', lineMetric='rutas', search='';
+let lineChart=null, barChart=null;
+
+/* ═══ HELPERS ═══ */
+function p2(n){return String(n).padStart(2,'0')}
+function hoy(){const d=new Date();return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`}
+function toMin(t){if(!t)return null;const m=/^(\d{1,2}):(\d{2})$/.exec(String(t).trim());if(!m)return null;return (+m[1])*60+(+m[2])}
+function diffMin(a,b){const x=toMin(a),y=toMin(b);if(x==null||y==null)return -1;let d=y-x;if(d<0)d+=1440;return d}
+function fmtMin(m){if(m==null||m<0)return '—';return m>=60?`${Math.floor(m/60)}h ${p2(m%60)}`:`${m}m`}
+function estado(r){return r.fin?'finalizada':(r.inicio?'llegado':'pendiente')}
+function totalD(r){return (+r.dArlog||0)+(+r.dChep||0)+(+r.dDesc||0)}
+function initials(n){return (n||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?'}
+const AV=['#1B4332','#2E7D5B','#0891b2','#7c3aed','#db2777','#ea580c','#9A7B12','#0e7490'];
+function avColor(n){let h=0;for(const c of (n||''))h=(h*31+c.charCodeAt(0))&0xffff;return AV[h%AV.length]}
+function parseCuenta(valor){
+  const s=String(valor||'');
+  const tm=s.match(/\d+/); const total=tm?+tm[0]:0;
+  const pi=+((s.match(/(\d+)\s*PI/i)||[])[1]||0);
+  const sa=+((s.match(/(\d+)\s*SA/i)||[])[1]||0);
+  const rr=+((s.match(/(\d+)\s*R(?![A-Za-z])/i)||[])[1]||0);
+  return {total,pi,sa,r:rr,resto:Math.max(0,total-pi-sa-rr)};
+}
+
+/* ═══ CONEXIÓN ═══ */
+function setSync(state){
+  const d=document.getElementById('syncDot'),t=document.getElementById('syncTxt');
+  d.className='sync-dot '+(state==='on'?'on':state==='off'?'off':'');
+  t.textContent = state==='on'?'En vivo':state==='off'?'Sin conexión':'Conectando…';
+}
+function subscribe(f){
+  if(unsub)unsub();
+  setSync('');
+  unsub = FS.collection('jornadas').doc(f).collection('rutas').onSnapshot(snap=>{
+    RUTAS = snap.docs.map(d=>d.data());
+    setSync('on'); renderAll();
+  }, err=>{ console.warn(err); setSync('off'); });
+}
+
+/* ═══ RENDER ═══ */
+function renderAll(){ renderHero(); renderKPIs(); renderRank(); updateRankLead(); renderCuentas(); renderTable(); }
+
+function renderHero(){
+  const [y,m,d]=fecha.split('-').map(Number);
+  const dt=new Date(y,m-1,d);
+  const DOW=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const MON=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  document.getElementById('heroDay').textContent=p2(d);
+  document.getElementById('heroDow').textContent=DOW[dt.getDay()];
+  document.getElementById('heroMonth').textContent=`${MON[m-1]} ${y}`;
+  const fin=RUTAS.filter(r=>estado(r)==='finalizada');
+  document.getElementById('heroDesp').textContent=fin.length;
+  document.getElementById('heroTot').textContent=RUTAS.length;
+  document.getElementById('heroPlt').textContent=RUTAS.reduce((a,r)=>a+totalD(r),0);
+}
+function renderKPIs(){
+  const tot=RUTAS.length;
+  const fin=RUTAS.filter(r=>estado(r)==='finalizada').length;
+  const lleg=RUTAS.filter(r=>estado(r)!=='pendiente').length;
+  const proms=RUTAS.filter(r=>r.inicio&&r.fin).map(r=>diffMin(r.inicio,r.fin)).filter(m=>m>=0);
+  const prom=proms.length?Math.round(proms.reduce((a,b)=>a+b,0)/proms.length):null;
+  document.getElementById('kTot').textContent=tot;
+  document.getElementById('kFaltan').textContent=tot-fin;
+  document.getElementById('kLleg').textContent=lleg;
+  document.getElementById('kFin').textContent=fin;
+  document.getElementById('kProm').textContent=prom==null?'—':fmtMin(prom);
+}
+function rankData(){
+  const map={};
+  RUTAS.forEach(r=>{ if(!r.cargador)return; const m=map[r.cargador]||(map[r.cargador]={n:r.cargador,pallets:0,rutas:0,ts:0,tc:0});
+    m.pallets+=totalD(r); if(estado(r)==='finalizada'){ m.rutas++; const d=diffMin(r.inicio,r.fin); if(d>=0){m.ts+=d;m.tc++;} } });
+  return Object.values(map).map(m=>({...m,prom:m.tc?Math.round(m.ts/m.tc):0}));
+}
+function renderRank(){
+  const data=rankData(); const key=rankMetric;
+  data.sort((a,b)=>key==='prom'?(a.prom||1e9)-(b.prom||1e9):b[key]-a[key]);
+  const max=Math.max(...data.map(d=>d[key]||0),1);
+  document.getElementById('rankSub').textContent=(key==='pallets'?'Por pallets despachados':key==='rutas'?'Por rutas cargadas':'Por tiempo promedio')+' · jornada';
+  const el=document.getElementById('rkList');
+  if(!data.length){ el.innerHTML='<div class="empty">Todavía no hay cargadores asignados.</div>'; return; }
+  el.innerHTML=data.map((d,i)=>{
+    const val=key==='prom'?fmtMin(d.prom):d[key];
+    const lbl=key==='pallets'?'PALLETS':key==='rutas'?'RUTAS':'PROM';
+    const w=key==='prom'?(max?100-(d.prom/max*70):0):(d[key]/max*100);
+    return `<div class="rk-item"><div class="rk-pos ${i<3?'p'+(i+1):''}">${i+1}</div>
+      <div class="rk-av" style="background:${avColor(d.n)}">${initials(d.n)}</div>
+      <div class="rk-info"><div class="rk-name">${d.n}</div>
+        <div class="rk-sub">${d.rutas} rutas · ${d.pallets} pallets · prom ${fmtMin(d.prom)}</div>
+        <div class="rk-bar-track"><div class="rk-bar-fill" style="width:${w}%"></div></div></div>
+      <div class="rk-val"><div class="rk-num">${val}</div><div class="rk-lbl">${lbl}</div></div></div>`;
+  }).join('');
+}
+function updateRankLead(){
+  const top=rankData().sort((a,b)=>b.pallets-a.pallets)[0];
+  document.getElementById('rankLead').innerHTML=top?`🥇 <b>${top.n}</b> · ${top.pallets} pallets`:'';
+}
+function setRank(m,ev){if(ev)ev.stopPropagation();rankMetric=m;document.querySelectorAll('#rankTabs .metric-tab').forEach(t=>t.classList.toggle('on',t.dataset.m===m));renderRank()}
+function toggleRank(){const l=document.getElementById('rkList'),t=document.getElementById('rankTabs'),a=document.getElementById('rankArrow');const o=l.style.display==='none';l.style.display=o?'flex':'none';t.style.display=o?'flex':'none';a.classList.toggle('open',o)}
+
+function renderCuentas(){
+  const map={};
+  RUTAS.forEach(r=>(r.cuentas||[]).forEach(c=>{
+    const p=parseCuenta(c.valor); if(p.total<=0)return;
+    const k=c.cuenta||'—'; const o=map[k]||(map[k]={n:k,pi:0,sa:0,r:0,resto:0});
+    o.pi+=p.pi;o.sa+=p.sa;o.r+=p.r;o.resto+=p.resto;
+  }));
+  let arr=Object.values(map).map(o=>({...o,tot:o.pi+o.sa+o.r+o.resto})).filter(o=>o.tot>0).sort((a,b)=>b.tot-a.tot);
+  const el=document.getElementById('cuentaList');
+  if(!arr.length){ el.innerHTML='<div class="empty">Sin cuentas cargadas en esta jornada.</div>'; return; }
+  const max=Math.max(...arr.map(o=>o.tot));
+  el.innerHTML=arr.map(o=>`<div class="cta"><span class="cta-name" title="${o.n}">${o.n}</span>
+    <div class="cta-track">
+      <div class="seg pi" style="width:${o.pi/max*100}%" title="Picking ${o.pi}"></div>
+      <div class="seg sa" style="width:${o.sa/max*100}%" title="Completos ${o.sa}"></div>
+      <div class="seg rr" style="width:${o.r/max*100}%" title="Redespacho ${o.r}"></div>
+      <div class="seg ot" style="width:${o.resto/max*100}%" title="Sin desglose ${o.resto}"></div>
+    </div><span class="cta-val">${o.tot}</span></div>`).join('');
+}
+
+/* ═══ EVOLUCIÓN (últimos 7 días) ═══ */
+async function loadEvolucion(){
+  const days=[];
+  const [y,m,d]=fecha.split('-').map(Number);
+  const base=new Date(y,m-1,d);
+  for(let i=6;i>=0;i--){const x=new Date(base);x.setDate(x.getDate()-i);days.push(x)}
+  const res=await Promise.all(days.map(x=>{
+    const f=`${x.getFullYear()}-${p2(x.getMonth()+1)}-${p2(x.getDate())}`;
+    return FS.collection('jornadas').doc(f).collection('rutas').get()
+      .then(s=>{const rs=s.docs.map(dd=>dd.data());return {rutas:rs.length,pallets:rs.reduce((a,r)=>a+totalD(r),0)}})
+      .catch(()=>({rutas:0,pallets:0}));
+  }));
+  window.EVO={labels:days.map(x=>`${p2(x.getDate())}/${p2(x.getMonth()+1)}`),rutas:res.map(r=>r.rutas),pallets:res.map(r=>r.pallets)};
+  renderLine();
+}
+function renderLine(){
+  if(!window.EVO)return;
+  const vals=window.EVO[lineMetric];
+  if(lineChart)lineChart.destroy();
+  lineChart=new Chart(document.getElementById('lineC'),{type:'line',
+    data:{labels:window.EVO.labels,datasets:[{data:vals,borderColor:'#1B4332',backgroundColor:'rgba(27,67,50,.08)',borderWidth:2.5,fill:true,tension:.35,pointBackgroundColor:'#C9A227',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:4}]},
+    options:{plugins:{legend:{display:false}},responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,grid:{color:'#E6DECB'},ticks:{color:'#5B6B60',font:{weight:600}}},x:{grid:{display:false},ticks:{color:'#5B6B60',font:{weight:600}}}}}});
+  document.getElementById('lineSub').textContent=(lineMetric==='rutas'?'Rutas':'Pallets')+' · últimos 7 días';
+}
+function setLine(m){lineMetric=m;document.querySelectorAll('#lineTabs .metric-tab').forEach(t=>t.classList.toggle('on',t.dataset.m===m));renderLine()}
+
+/* ═══ TABLA ═══ */
+function toggleTable(){const b=document.getElementById('tableBody'),a=document.getElementById('tableArrow');const o=b.style.display==='none';b.style.display=o?'block':'none';a.classList.toggle('open',o)}
+function onSearch(v){search=v.trim().toLowerCase();renderTable()}
+function despResumen(r){const p=[];if(+r.dArlog>0)p.push(r.dArlog+' Arlog');if(+r.dChep>0)p.push(r.dChep+' Chep');if(+r.dDesc>0)p.push(r.dDesc+' Desc');return p.join(' · ')}
+function renderTable(){
+  document.getElementById('dtHead').innerHTML=`<tr><th>Ruta</th><th>Chofer</th><th>Citación</th><th>Inicio</th><th>Fin</th><th>Duración</th><th>Cortina</th><th>Despachado</th><th>Cargador</th><th>Estado</th><th>Obs</th></tr>`;
+  let rows=RUTAS.filter(r=>!search||[r.ruta,r.chofer,r.cargador,r.obs].join(' ').toLowerCase().includes(search));
+  rows.sort((a,b)=>(a.ord??0)-(b.ord??0)||String(a.ruta).localeCompare(String(b.ruta),undefined,{numeric:true}));
+  document.getElementById('tableSub').textContent=`${rows.length} ruta${rows.length!==1?'s':''} · jornada`;
+  const body=document.getElementById('dtBody');
+  if(!rows.length){body.innerHTML=`<tr><td colspan="11" class="empty">Sin rutas en esta jornada.</td></tr>`;return}
+  body.innerHTML=rows.map(r=>{
+    const e=estado(r),d=diffMin(r.inicio,r.fin);
+    const ec=e==='finalizada'?'fin':e==='llegado'?'lleg':'pend',el=e==='finalizada'?'Finalizada':e==='llegado'?'Llegado':'Pendiente';
+    const desp=totalD(r);
+    return `<tr><td style="font-weight:800">${r.ruta||''}</td>
+      <td style="font-variant-numeric:normal">${r.chofer||''}</td>
+      <td>${r.hcit||'<span class=dt-z>—</span>'}</td>
+      <td>${r.inicio||'<span class=dt-z>—</span>'}</td>
+      <td>${r.fin||'<span class=dt-z>—</span>'}</td>
+      <td style="color:var(--grn)">${fmtMin(d>=0?d:null)}</td>
+      <td>${r.cortina||'<span class=dt-z>—</span>'}</td>
+      <td style="color:${desp?'var(--oro-d)':'var(--tx3)'};font-weight:700">${desp||'—'}</td>
+      <td style="font-variant-numeric:normal">${r.cargador||'<span class=dt-z>—</span>'}</td>
+      <td><span class="est ${ec}">${el}</span></td>
+      <td style="font-variant-numeric:normal;color:var(--tx2)">${r.obs||'<span class=dt-z>—</span>'}</td></tr>`;
+  }).join('');
+}
+function exportExcel(){
+  const rows=RUTAS.slice().sort((a,b)=>(a.ord??0)-(b.ord??0));
+  if(!rows.length){alert('No hay rutas para exportar.');return}
+  const header=['Ruta','Chofer','Citación','Inicio','Fin','Duración (min)','Cortina','Arlog','Chep','Desc','Despachado','Cargador','Estado','Obs'];
+  const data=rows.map(r=>{const d=diffMin(r.inicio,r.fin);return [r.ruta||'',r.chofer||'',r.hcit||'',r.inicio||'',r.fin||'',d>=0?d:'',r.cortina||'',(+r.dArlog||0),(+r.dChep||0),(+r.dDesc||0),totalD(r),r.cargador||'',estado(r),r.obs||'']});
+  const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet([header,...data]);
+  XLSX.utils.book_append_sheet(wb,ws,'Rutas');
+  XLSX.writeFile(wb,`Expedicion_${fecha}.xlsx`);
+}
+
+/* ═══ NAVEGACIÓN DE FECHA ═══ */
+function goFecha(f){ fecha=f; document.getElementById('datePicker').value=fecha; updateNav(); subscribe(fecha); loadEvolucion(); }
+function shiftDay(delta){ const [y,m,d]=fecha.split('-').map(Number); const x=new Date(y,m-1,d); x.setDate(x.getDate()+delta);
+  goFecha(`${x.getFullYear()}-${p2(x.getMonth()+1)}-${p2(x.getDate())}`); }
+function updateNav(){ document.getElementById('nextDay').disabled = fecha>=hoy(); }
+
+/* ═══ INIT ═══ */
+document.getElementById('datePicker').value=fecha;
+document.getElementById('datePicker').addEventListener('change',e=>{ goFecha(e.target.value||hoy()); });
+document.getElementById('prevDay').addEventListener('click',()=>shiftDay(-1));
+document.getElementById('nextDay').addEventListener('click',()=>shiftDay(1));
+document.getElementById('hoyBtn').addEventListener('click',()=>goFecha(hoy()));
+updateNav();
+subscribe(fecha);
+loadEvolucion();
+</script>
+</body>
+</html>
