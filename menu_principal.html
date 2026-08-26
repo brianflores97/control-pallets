@@ -40,6 +40,9 @@
   .side .foot .av{width:30px;height:30px;border-radius:8px;background:var(--card2);border:1px solid var(--bd2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--oro-l)}
   .side .foot .u b{color:var(--tx2);font-size:11.5px;display:block;font-weight:600}
   .side .foot .u small{color:var(--tx3);font-size:10px}
+  .logout{margin-left:auto;background:transparent;border:none;color:var(--tx3);cursor:pointer;width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .logout svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .logout:hover{color:var(--red);background:var(--card)}
   .main{flex:1;padding:26px 32px 60px;min-width:0}
   .view{animation:fade .25s ease}
   @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -77,6 +80,45 @@
   .op .t small{display:block;font-size:10.5px;color:var(--tx3);font-weight:500;margin-top:2px}
   .op .badge{margin-left:auto;font-size:8px;font-weight:700;letter-spacing:.5px;color:var(--tx3);border:1px solid var(--bd2);padding:2px 6px;border-radius:5px;flex-shrink:0}
   .stub{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:40px;text-align:center;color:var(--tx3);font-size:13px}
+  .turnos{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+  .turno-chip{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--bd);color:var(--tx2);font-family:inherit;font-size:13px;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;transition:.15s}
+  .turno-chip:hover{border-color:var(--bd2);color:var(--tx)}
+  .turno-chip.on{background:rgba(201,162,39,.14);border-color:var(--oro);color:var(--tx)}
+  .placeholder{background:var(--card);border:1px dashed var(--bd2);border-radius:14px;padding:44px 24px;text-align:center;color:var(--tx3);font-size:13px;line-height:1.8}
+  /* login */
+  .login{position:fixed;inset:0;z-index:1000;background:linear-gradient(135deg,var(--panel),var(--bg));display:flex;align-items:center;justify-content:center;padding:20px}
+  .login.hide{display:none}
+  .login-card{background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:34px 30px;width:100%;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+  .login-lg{width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,var(--oro),var(--oro-l));display:flex;align-items:center;justify-content:center;font-weight:700;color:#12100C;font-size:22px;margin:0 auto 16px}
+  .login-card h1{font-size:20px;color:var(--tx);font-weight:700}
+  .login-card p{font-size:12px;color:var(--tx3);margin:4px 0 8px}
+  .login-card label{display:block;text-align:left;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;margin:16px 0 7px}
+  .login-card input{width:100%;background:var(--card2);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;color:var(--tx);font-family:inherit;font-size:14px;outline:none}
+  .login-card input:focus{border-color:var(--oro)}
+  .lt-row{display:flex;gap:6px}
+  .lt{flex:1;background:var(--card2);border:1px solid var(--bd);color:var(--tx2);font-family:inherit;font-size:12px;font-weight:600;padding:9px 4px;border-radius:9px;cursor:pointer}
+  .lt.on{background:rgba(201,162,39,.16);border-color:var(--oro);color:var(--tx)}
+  .login-enter{width:100%;margin-top:22px;background:var(--oro);color:#12100C;border:none;border-radius:10px;padding:13px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+  .login-enter:hover{background:var(--oro-l)}
+  /* config */
+  .cfg{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .cfg-card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:20px}
+  .cfg-t{font-size:14px;font-weight:700;color:var(--tx);margin-bottom:10px}
+  .cfg-l{display:block;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;margin:12px 0 7px}
+  .cfg-i{width:100%;background:var(--card2);border:1px solid var(--bd);border-radius:9px;padding:10px 12px;color:var(--tx);font-family:inherit;font-size:13px;outline:none}
+  .cfg-i:focus{border-color:var(--oro)}
+  .cfg-p{font-size:12px;color:var(--tx2);line-height:1.5;margin-bottom:6px}
+  .cfg-save{margin-top:16px;background:var(--oro);color:#12100C;border:none;border-radius:9px;padding:10px 16px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
+  .cfg-save.ghost{background:transparent;border:1px solid var(--bd2);color:var(--tx2)}
+  .cfg-soon{display:inline-block;font-size:10px;font-weight:700;color:var(--oro-l);border:1px solid var(--bd2);border-radius:20px;padding:4px 10px;text-transform:uppercase;letter-spacing:.5px;margin-top:6px}
+  /* TEMA CLARO */
+  :root[data-theme="light"]{
+    --bg:#EFEAD9; --panel:#FBF8EF; --card:#FFFFFF; --card2:#F5F0E2;
+    --bd:#E6DECB; --bd2:#D6CBAF;
+    --tx:#26312B; --tx2:#5B6B60; --tx3:#9AA69C;
+    --oro:#B0890F; --oro-l:#8A6D10;
+    --grn:#2E7D5B; --red:#C0492B;
+  }
   .version{position:fixed;bottom:12px;right:14px;background:var(--card);border:1px solid var(--bd);color:var(--oro-l);font-size:11px;font-weight:600;padding:5px 11px;border-radius:20px}
   /* modal macros */
   .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;z-index:500;padding:20px}
@@ -111,6 +153,22 @@
 </style>
 </head>
 <body>
+<div id="login" class="login">
+  <div class="login-card">
+    <div class="login-lg">iF</div>
+    <h1>Panel Maestro CDR</h1>
+    <p>Centro de Distribución Nogués</p>
+    <label>Tu nombre</label>
+    <input id="loginName" placeholder="Ej. Brian Flores" autocomplete="off">
+    <label>Turno</label>
+    <div class="lt-row" id="loginTurnos">
+      <button type="button" class="lt" data-t="manana">Mañana</button>
+      <button type="button" class="lt" data-t="tarde">Tarde</button>
+      <button type="button" class="lt on" data-t="noche">Noche</button>
+    </div>
+    <button id="loginBtn" class="login-enter">Entrar →</button>
+  </div>
+</div>
 <div class="app">
   <aside class="side">
     <div class="brand"><div class="lg">iF</div><div><b>Panel CDR</b><span>Nogués</span></div></div>
@@ -123,7 +181,7 @@
     <nav class="nav">
       <a onclick="show('config',this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5 5l2.1 2.1M16.9 16.9L19 19M19 5l-2.1 2.1M7.1 16.9L5 19"/></svg>Configuración</a>
     </nav>
-    <div class="foot"><div class="u"><div class="av">BF</div><div><b>Brian Flores</b><small>Supervisor · noche</small></div></div></div>
+    <div class="foot"><div class="u"><div class="av" id="userAv">BF</div><div style="flex:1;min-width:0"><b id="userName">Brian Flores</b><small id="userTurno">Noche</small></div><button class="logout" onclick="logout()" title="Cerrar sesión"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg></button></div></div>
   </aside>
 
   <main class="main">
@@ -158,7 +216,13 @@
 
     <!-- OPERATIVA -->
     <div id="view-operativa" class="view" style="display:none">
-      <div class="top"><div><h1>Operativa</h1><div class="date">Accesos directos a las apps y macros del CDR</div></div></div>
+      <div class="top"><div><h1>Operativa</h1><div class="date">Accesos por turno</div></div></div>
+      <div class="turnos">
+        <button class="turno-chip" data-turno="manana" onclick="setTurno('manana',this)">Mañana</button>
+        <button class="turno-chip" data-turno="tarde" onclick="setTurno('tarde',this)">Tarde</button>
+        <button class="turno-chip on" data-turno="noche" onclick="setTurno('noche',this)">Noche</button>
+      </div>
+      <div class="turno-panel" id="t-noche">
       <div class="sec-lbl">Apps web</div>
       <div class="ops">
         <a class="op" data-link="expedicionSupervisor"><div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="13" height="10" rx="1.5"/><path d="M15 9h4l3 3v4h-7z"/><circle cx="7" cy="18.5" r="1.5"/><circle cx="18" cy="18.5" r="1.5"/></svg></div><div class="t">Supervisor<small>Expedición CDR</small></div></a>
@@ -173,12 +237,50 @@
         <a class="op" data-macro="planillaFinal"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></div><div class="t">3 · Planilla de Despacho<small>integradora</small></div><span class="badge">XLSM</span></a>
         <a class="op" data-macro="cagnoli"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></div><div class="t">Suite Cagnoli<small>dársenas · carteles A4</small></div><span class="badge">XLSM</span></a>
       </div>
+      </div><!-- /t-noche -->
+      <div class="turno-panel" id="t-tarde" style="display:none">
+        <div class="placeholder">Todavía no cargamos las herramientas del <b style="color:var(--tx2)">turno tarde</b>.<br>Decime cuáles usás y las sumo acá.</div>
+      </div>
+      <div class="turno-panel" id="t-manana" style="display:none">
+        <div class="placeholder">Todavía no cargamos las herramientas del <b style="color:var(--tx2)">turno mañana</b>.<br>Decime cuáles usás y las sumo acá.</div>
+      </div>
     </div>
 
     <!-- CONFIG -->
     <div id="view-config" class="view" style="display:none">
       <div class="top"><div><h1>Configuración</h1><div class="date">Ajustes del panel</div></div></div>
-      <div class="stub">Sección de configuración — a definir más adelante.</div>
+      <div class="cfg">
+        <div class="cfg-card">
+          <div class="cfg-t">Datos del usuario</div>
+          <label class="cfg-l">Nombre</label>
+          <input id="cfgName" class="cfg-i" placeholder="Tu nombre">
+          <label class="cfg-l">Turno</label>
+          <div class="lt-row" id="cfgTurnos">
+            <button type="button" class="lt" data-t="manana">Mañana</button>
+            <button type="button" class="lt" data-t="tarde">Tarde</button>
+            <button type="button" class="lt" data-t="noche">Noche</button>
+          </div>
+          <button class="cfg-save" onclick="saveUser()">Guardar</button>
+        </div>
+        <div class="cfg-card">
+          <div class="cfg-t">Tema</div>
+          <p class="cfg-p">Cambiá entre modo oscuro y claro.</p>
+          <div class="lt-row">
+            <button type="button" class="lt" id="temaDark" onclick="setTema('dark')">Oscuro</button>
+            <button type="button" class="lt" id="temaLight" onclick="setTema('light')">Claro</button>
+          </div>
+        </div>
+        <div class="cfg-card">
+          <div class="cfg-t">Administrar turnos y herramientas</div>
+          <p class="cfg-p">Agregar o sacar herramientas de cada turno desde el panel, sin tocar el código.</p>
+          <span class="cfg-soon">Próximo paso</span>
+        </div>
+        <div class="cfg-card">
+          <div class="cfg-t">Sesión</div>
+          <p class="cfg-p">Cerrás sesión y volvés a la pantalla de inicio.</p>
+          <button class="cfg-save ghost" onclick="logout()">Cerrar sesión</button>
+        </div>
+      </div>
     </div>
   </main>
 </div>
@@ -199,7 +301,7 @@
     <a class="mweb" id="mWeb" target="_blank" rel="noopener">o abrir en el navegador</a>
   </div>
 </div>
-<div class="version">v10 · final</div>
+<div class="version">v13 · login</div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════
@@ -275,6 +377,63 @@ function openMacro(k){
   document.getElementById('macroModal').classList.add('open');
 }
 function closeMacro(){ document.getElementById('macroModal').classList.remove('open'); }
+function setTurno(t,el){
+  document.querySelectorAll('.turno-panel').forEach(p=>p.style.display='none');
+  document.getElementById('t-'+t).style.display='block';
+  document.querySelectorAll('.turno-chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+}
+
+/* ═══ LOGIN · USUARIO · TEMA ═══ */
+function lsGet(k,d){try{return localStorage.getItem(k)||d}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+const TDISP={manana:'Mañana',tarde:'Tarde',noche:'Noche'};
+let USER=lsGet('cdr_nombre',''), TURNO=lsGet('cdr_turno','noche'), TEMA=lsGet('cdr_tema','dark');
+
+function applyTema(t){
+  TEMA=t;
+  if(t==='light') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  lsSet('cdr_tema',t);
+  const dd=document.getElementById('temaDark'), ll=document.getElementById('temaLight');
+  if(dd&&ll){ dd.classList.toggle('on',t!=='light'); ll.classList.toggle('on',t==='light'); }
+}
+function setTema(t){ applyTema(t); }
+
+function renderUser(){
+  const ini=(USER||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';
+  const av=document.getElementById('userAv'), nm=document.getElementById('userName'), tr=document.getElementById('userTurno');
+  if(av)av.textContent=ini; if(nm)nm.textContent=USER||'—'; if(tr)tr.textContent=(TDISP[TURNO]||TURNO);
+}
+function doLogin(){
+  const n=document.getElementById('loginName').value.trim();
+  if(!n){ document.getElementById('loginName').focus(); return; }
+  USER=n; lsSet('cdr_nombre',USER); lsSet('cdr_turno',TURNO);
+  const cn=document.getElementById('cfgName'); if(cn)cn.value=USER;
+  renderUser();
+  document.getElementById('login').classList.add('hide');
+  const chip=document.querySelector('.turno-chip[data-turno="'+TURNO+'"]'); if(chip)setTurno(TURNO,chip);
+}
+function logout(){ try{localStorage.removeItem('cdr_nombre')}catch(e){} USER=''; document.getElementById('login').classList.remove('hide'); }
+function saveUser(){
+  const n=document.getElementById('cfgName').value.trim();
+  const t=document.querySelector('#cfgTurnos .lt.on');
+  if(n)USER=n; if(t)TURNO=t.dataset.t;
+  lsSet('cdr_nombre',USER); lsSet('cdr_turno',TURNO); renderUser(); alert('Datos guardados.');
+}
+document.querySelectorAll('#loginTurnos .lt').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#loginTurnos .lt').forEach(x=>x.classList.remove('on'));b.classList.add('on');TURNO=b.dataset.t;}));
+document.querySelectorAll('#cfgTurnos .lt').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#cfgTurnos .lt').forEach(x=>x.classList.remove('on'));b.classList.add('on');}));
+document.getElementById('loginBtn').addEventListener('click',doLogin);
+document.getElementById('loginName').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+(function initUser(){
+  applyTema(TEMA);
+  document.querySelectorAll('#loginTurnos .lt').forEach(x=>x.classList.toggle('on',x.dataset.t===TURNO));
+  document.querySelectorAll('#cfgTurnos .lt').forEach(x=>x.classList.toggle('on',x.dataset.t===TURNO));
+  const cn=document.getElementById('cfgName'); if(cn)cn.value=USER;
+  renderUser();
+  if(USER){ document.getElementById('login').classList.add('hide'); }
+  else { document.getElementById('loginName').focus(); }
+})();
 document.querySelectorAll('[data-macro]').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();openMacro(el.dataset.macro);}));
 document.getElementById('macroModal').addEventListener('click',e=>{ if(e.target.id==='macroModal') closeMacro(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeMacro(); });
