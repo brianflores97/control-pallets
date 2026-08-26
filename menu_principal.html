@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Panel Maestro CDR — Menú principal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+  :root{
+    --bg:#12100C; --panel:#17150F; --card:#1C1A14; --card2:#211E16;
+    --bd:#2E2A1E; --bd2:#3A3527;
+    --tx:#F6F1E4; --tx2:#B4AE9C; --tx3:#8A8674;
+    --oro:#C9A227; --oro-l:#E0C15A;
+    --grn:#7BE0A9; --red:#F0876A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Space Grotesk','Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;min-height:100vh}
+  .num{font-variant-numeric:tabular-nums}
+  .app{display:flex;min-height:100vh}
+  svg{width:18px;height:18px;flex-shrink:0}
+  .side{width:212px;background:var(--panel);border-right:1px solid var(--bd);padding:20px 14px;flex-shrink:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .brand{display:flex;align-items:center;gap:11px;padding:4px 8px 22px}
+  .brand .lg{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--oro),var(--oro-l));display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--bg);font-size:15px}
+  .brand b{font-size:14px;color:var(--tx);line-height:1.15}
+  .brand span{display:block;font-size:10px;color:var(--tx3);font-weight:500}
+  .nav-lbl{font-size:9px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:1.4px;padding:16px 12px 9px}
+  .nav a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:9px;color:var(--tx2);font-size:13px;font-weight:500;text-decoration:none;margin-bottom:3px;cursor:pointer;transition:.15s;position:relative}
+  .nav a svg{stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .nav a:hover{background:var(--card);color:var(--tx)}
+  .nav a.on{background:rgba(201,162,39,.13);color:var(--tx)}
+  .nav a.on svg{stroke:var(--oro-l)}
+  .nav a.on::before{content:'';position:absolute;left:0;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--oro)}
+  .side .foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--bd)}
+  .side .foot .u{display:flex;align-items:center;gap:10px;padding:4px}
+  .side .foot .av{width:30px;height:30px;border-radius:8px;background:var(--card2);border:1px solid var(--bd2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--oro-l)}
+  .side .foot .u b{color:var(--tx2);font-size:11.5px;display:block;font-weight:600}
+  .side .foot .u small{color:var(--tx3);font-size:10px}
+  .logout{margin-left:auto;background:transparent;border:none;color:var(--tx3);cursor:pointer;width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .logout svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .logout:hover{color:var(--red);background:var(--card)}
+  .main{flex:1;padding:26px 32px 60px;min-width:0}
+  .view{animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:28px}
+  .top h1{font-size:23px;font-weight:700}
+  .top .date{font-size:12.5px;color:var(--tx3);margin-top:6px;font-weight:500}
+  .live{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--tx3);font-weight:600;letter-spacing:.5px;border:1px solid var(--bd);background:var(--card);padding:7px 13px;border-radius:20px}
+  .live .d{width:7px;height:7px;border-radius:50%;background:var(--tx3)}
+  .live.ok{color:var(--grn);border-color:rgba(123,224,169,.28);background:rgba(123,224,169,.06)}
+  .live.ok .d{background:var(--grn);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  .sec-lbl{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:1.4px;margin:0 0 15px}
+  .sec-lbl:not(:first-child){margin-top:30px}
+  .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .dcard{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:22px 24px;position:relative;overflow:hidden;cursor:pointer;transition:.18s;text-decoration:none;color:inherit;display:block}
+  .dcard::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--oro)}
+  .dcard:hover{border-color:var(--bd2);transform:translateY(-3px)}
+  .dcard .hd{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .dcard .ic{width:40px;height:40px;border-radius:10px;background:var(--card2);border:1px solid var(--bd2);display:flex;align-items:center;justify-content:center}
+  .dcard .ic svg{width:20px;height:20px;stroke:var(--oro-l);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .dcard .hd h3{font-size:16px;font-weight:600} .dcard .hd .s{font-size:11px;color:var(--tx3);margin-top:2px}
+  .stats{display:flex;gap:28px}
+  .stat .v{font-size:32px;font-weight:700;color:var(--grn);letter-spacing:-1.2px;line-height:1}
+  .stat .v.oro{color:var(--oro-l)} .stat .v.red{color:var(--red)}
+  .stat .k{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.6px;margin-top:6px;font-weight:500}
+  .dcard .go{margin-top:20px;font-size:12.5px;font-weight:600;color:var(--oro)}
+  .ops{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+  .op{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:15px 16px;text-decoration:none;color:var(--tx);cursor:pointer;transition:.15s}
+  .op:hover{border-color:var(--oro);background:var(--card2)}
+  .op.sinlink{opacity:.55}
+  .op .ic{width:34px;height:34px;border-radius:9px;background:var(--card2);border:1px solid var(--bd2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .op .ic svg{width:17px;height:17px;stroke:var(--tx2);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .op:hover .ic svg{stroke:var(--oro-l)}
+  .op .t{font-size:13px;font-weight:600;line-height:1.2;min-width:0}
+  .op .t small{display:block;font-size:10.5px;color:var(--tx3);font-weight:500;margin-top:2px}
+  .op .badge{margin-left:auto;font-size:8px;font-weight:700;letter-spacing:.5px;color:var(--tx3);border:1px solid var(--bd2);padding:2px 6px;border-radius:5px;flex-shrink:0}
+  .stub{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:40px;text-align:center;color:var(--tx3);font-size:13px}
+  .turnos{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+  .turno-chip{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--bd);color:var(--tx2);font-family:inherit;font-size:13px;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;transition:.15s}
+  .turno-chip:hover{border-color:var(--bd2);color:var(--tx)}
+  .turno-chip.on{background:rgba(201,162,39,.14);border-color:var(--oro);color:var(--tx)}
+  .placeholder{background:var(--card);border:1px dashed var(--bd2);border-radius:14px;padding:44px 24px;text-align:center;color:var(--tx3);font-size:13px;line-height:1.8}
+  /* login */
+  .login{position:fixed;inset:0;z-index:1000;background:linear-gradient(135deg,var(--panel),var(--bg));display:flex;align-items:center;justify-content:center;padding:20px}
+  .login.hide{display:none}
+  .login-card{background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:34px 30px;width:100%;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+  .login-lg{width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,var(--oro),var(--oro-l));display:flex;align-items:center;justify-content:center;font-weight:700;color:#12100C;font-size:22px;margin:0 auto 16px}
+  .login-card h1{font-size:20px;color:var(--tx);font-weight:700}
+  .login-card p{font-size:12px;color:var(--tx3);margin:4px 0 8px}
+  .login-card label{display:block;text-align:left;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;margin:16px 0 7px}
+  .login-card input{width:100%;background:var(--card2);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;color:var(--tx);font-family:inherit;font-size:14px;outline:none}
+  .login-card input:focus{border-color:var(--oro)}
+  .lt-row{display:flex;gap:6px}
+  .lt{flex:1;background:var(--card2);border:1px solid var(--bd);color:var(--tx2);font-family:inherit;font-size:12px;font-weight:600;padding:9px 4px;border-radius:9px;cursor:pointer}
+  .lt.on{background:rgba(201,162,39,.16);border-color:var(--oro);color:var(--tx)}
+  .login-enter{width:100%;margin-top:22px;background:var(--oro);color:#12100C;border:none;border-radius:10px;padding:13px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+  .login-enter:hover{background:var(--oro-l)}
+  /* config */
+  .cfg{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .cfg-card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:20px}
+  .cfg-t{font-size:14px;font-weight:700;color:var(--tx);margin-bottom:10px}
+  .cfg-l{display:block;font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;margin:12px 0 7px}
+  .cfg-i{width:100%;background:var(--card2);border:1px solid var(--bd);border-radius:9px;padding:10px 12px;color:var(--tx);font-family:inherit;font-size:13px;outline:none}
+  .cfg-i:focus{border-color:var(--oro)}
+  .cfg-p{font-size:12px;color:var(--tx2);line-height:1.5;margin-bottom:6px}
+  .cfg-save{margin-top:16px;background:var(--oro);color:#12100C;border:none;border-radius:9px;padding:10px 16px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
+  .cfg-save.ghost{background:transparent;border:1px solid var(--bd2);color:var(--tx2)}
+  .cfg-soon{display:inline-block;font-size:10px;font-weight:700;color:var(--oro-l);border:1px solid var(--bd2);border-radius:20px;padding:4px 10px;text-transform:uppercase;letter-spacing:.5px;margin-top:6px}
+  /* TEMA CLARO */
+  :root[data-theme="light"]{
+    --bg:#EFEAD9; --panel:#FBF8EF; --card:#FFFFFF; --card2:#F5F0E2;
+    --bd:#E6DECB; --bd2:#D6CBAF;
+    --tx:#26312B; --tx2:#5B6B60; --tx3:#9AA69C;
+    --oro:#B0890F; --oro-l:#8A6D10;
+    --grn:#2E7D5B; --red:#C0492B;
+  }
+  .version{position:fixed;bottom:12px;right:14px;background:var(--card);border:1px solid var(--bd);color:var(--oro-l);font-size:11px;font-weight:600;padding:5px 11px;border-radius:20px}
+  /* modal macros */
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;z-index:500;padding:20px}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--bd2);border-radius:16px;max-width:470px;width:100%;max-height:86vh;overflow:auto;padding:22px 24px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .mhead{display:flex;align-items:flex-start;gap:12px;margin-bottom:6px}
+  .mhead h2{font-size:18px;font-weight:700;color:var(--tx)}
+  .mhead .x{margin-left:auto;background:var(--card2);border:1px solid var(--bd2);color:var(--tx2);width:30px;height:30px;border-radius:8px;font-size:14px;cursor:pointer;flex-shrink:0}
+  .mhead .x:hover{color:var(--tx);border-color:var(--oro)}
+  .mque{font-size:13px;color:var(--tx2);margin-bottom:16px;line-height:1.5}
+  .msec{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px}
+  .mpasos{margin:0 0 18px;padding:0;list-style:none;counter-reset:s}
+  .mpasos li{counter-increment:s;position:relative;padding:9px 0 9px 34px;font-size:13px;color:var(--tx);border-bottom:1px solid var(--bd);line-height:1.45}
+  .mpasos li:last-child{border-bottom:none}
+  .mpasos li::before{content:counter(s);position:absolute;left:0;top:8px;width:22px;height:22px;border-radius:6px;background:rgba(201,162,39,.15);color:var(--oro-l);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .mbtn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--oro);color:var(--bg);border:none;text-decoration:none;padding:12px;border-radius:10px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer}
+  .mbtn:hover{background:var(--oro-l)}
+  .mbtn.sinlink{background:var(--card2);color:var(--tx3);border:1px solid var(--bd2);cursor:default}
+  .mnote{background:rgba(240,135,106,.08);border:1px solid rgba(240,135,106,.3);border-radius:10px;padding:11px 13px;margin-bottom:14px;font-size:11.5px;color:var(--tx2);line-height:1.5}
+  .mnote>b{color:var(--red)}
+  .mnote ol{margin:7px 0 0;padding-left:18px}
+  .mnote li{margin:4px 0}
+  .mweb{display:block;text-align:center;margin-top:10px;font-size:11.5px;color:var(--tx3);text-decoration:none}
+  .mweb:hover{color:var(--oro-l)}
+  @media(max-width:760px){
+    .app{flex-direction:column}
+    .side{width:100%;height:auto;position:relative;flex-direction:row;align-items:center;overflow-x:auto;padding:12px}
+    .side .brand{padding:0 12px 0 4px} .nav-lbl,.side .foot{display:none}
+    .nav{display:flex;gap:4px} .nav a{margin-bottom:0;white-space:nowrap}
+    .dash-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div id="login" class="login">
+  <div class="login-card">
+    <div class="login-lg">iF</div>
+    <h1>Panel Maestro CDR</h1>
+    <p>Centro de Distribución Nogués</p>
+    <label>Tu nombre</label>
+    <input id="loginName" placeholder="Ej. Brian Flores" autocomplete="off">
+    <label>Turno</label>
+    <div class="lt-row" id="loginTurnos">
+      <button type="button" class="lt" data-t="manana">Mañana</button>
+      <button type="button" class="lt" data-t="tarde">Tarde</button>
+      <button type="button" class="lt on" data-t="noche">Noche</button>
+    </div>
+    <button id="loginBtn" class="login-enter">Entrar →</button>
+  </div>
+</div>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="lg">iF</div><div><b>Panel CDR</b><span>Nogués</span></div></div>
+    <div class="nav-lbl">Menú</div>
+    <nav class="nav">
+      <a class="on" onclick="show('informativa',this)"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6" rx=".5"/><rect x="12" y="7" width="3" height="10" rx=".5"/><rect x="17" y="13" width="3" height="4" rx=".5"/></svg>Informativa</a>
+      <a onclick="show('operativa',this)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>Operativa</a>
+    </nav>
+    <div class="nav-lbl">Sistema</div>
+    <nav class="nav">
+      <a onclick="show('config',this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5 5l2.1 2.1M16.9 16.9L19 19M19 5l-2.1 2.1M7.1 16.9L5 19"/></svg>Configuración</a>
+    </nav>
+    <div class="foot"><div class="u"><div class="av" id="userAv">BF</div><div style="flex:1;min-width:0"><b id="userName">Brian Flores</b><small id="userTurno">Noche</small></div><button class="logout" onclick="logout()" title="Cerrar sesión"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg></button></div></div>
+  </aside>
+
+  <main class="main">
+    <!-- INFORMATIVA -->
+    <div id="view-informativa" class="view">
+      <div class="top">
+        <div><h1>Informativa</h1><div class="date" id="fechaTxt">—</div></div>
+        <div class="live" id="livePill"><span class="d"></span><span id="liveTxt">Conectando…</span></div>
+      </div>
+      <div class="sec-lbl">Dashboards</div>
+      <div class="dash-grid">
+        <a class="dcard" data-link="dashboardExpedicion">
+          <div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><rect x="1" y="6" width="13" height="10" rx="1.5"/><path d="M14 9h4l3 3v4h-7z"/><circle cx="6" cy="18.5" r="1.6"/><circle cx="17" cy="18.5" r="1.6"/></svg></div><div><h3>Expedición CDR</h3><div class="s">jornada de hoy</div></div></div>
+          <div class="stats">
+            <div class="stat"><div class="v num" id="expRutas">—</div><div class="k">Rutas</div></div>
+            <div class="stat"><div class="v red num" id="expFaltan">—</div><div class="k">Faltan salir</div></div>
+            <div class="stat"><div class="v oro num" id="expFin">—</div><div class="k">Despachadas</div></div>
+          </div>
+          <div class="go">Abrir dashboard →</div>
+        </a>
+        <a class="dcard" data-link="dashboardPallets">
+          <div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v10l-8 4-8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg></div><div><h3>Control de Pallets</h3><div class="s">picking del turno</div></div></div>
+          <div class="stats">
+            <div class="stat"><div class="v num" id="palBultos">—</div><div class="k">Bultos</div></div>
+            <div class="stat"><div class="v num" id="palRutas">—</div><div class="k">Rutas</div></div>
+            <div class="stat"><div class="v oro num" id="palCtrl">—</div><div class="k">Controladores</div></div>
+          </div>
+          <div class="go">Abrir dashboard →</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- OPERATIVA -->
+    <div id="view-operativa" class="view" style="display:none">
+      <div class="top"><div><h1>Operativa</h1><div class="date">Accesos por turno</div></div></div>
+      <div class="turnos">
+        <button class="turno-chip" data-turno="manana" onclick="setTurno('manana',this)">Mañana</button>
+        <button class="turno-chip" data-turno="tarde" onclick="setTurno('tarde',this)">Tarde</button>
+        <button class="turno-chip on" data-turno="noche" onclick="setTurno('noche',this)">Noche</button>
+      </div>
+      <div class="turno-panel" id="t-noche">
+      <div class="sec-lbl">Apps web</div>
+      <div class="ops">
+        <a class="op" data-link="expedicionSupervisor"><div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="13" height="10" rx="1.5"/><path d="M15 9h4l3 3v4h-7z"/><circle cx="7" cy="18.5" r="1.5"/><circle cx="18" cy="18.5" r="1.5"/></svg></div><div class="t">Supervisor<small>Expedición CDR</small></div></a>
+        <a class="op" data-link="expedicionCargador"><div class="ic"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M10 18h4"/></svg></div><div class="t">Cargador<small>Expedición CDR</small></div></a>
+        <a class="op" data-link="controlPallets"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v10l-8 4-8-4V7z"/><path d="M4 7l8 4 8-4"/></svg></div><div class="t">Control de Pallets<small>picking</small></div></a>
+        <a class="op" data-link="posiciones"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div><div class="t">Posiciones<small>link WhatsApp</small></div></a>
+      </div>
+      <div class="sec-lbl">Macros de Excel <span style="color:var(--tx3);font-weight:500;text-transform:none;letter-spacing:0">· tocá para ver los pasos</span></div>
+      <div class="ops">
+        <a class="op" data-macro="gestionDiaria"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></div><div class="t">1 · Gestión Diaria<small>UNIGIS</small></div><span class="badge">XLSM</span></a>
+        <a class="op" data-macro="completos"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></div><div class="t">2 · Completos<small>VKM · 4 empresas</small></div><span class="badge">XLSM</span></a>
+        <a class="op" data-macro="planillaFinal"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></div><div class="t">3 · Planilla de Despacho<small>integradora</small></div><span class="badge">XLSM</span></a>
+        <a class="op" data-macro="cagnoli"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></div><div class="t">Suite Cagnoli<small>dársenas · carteles A4</small></div><span class="badge">XLSM</span></a>
+      </div>
+      </div><!-- /t-noche -->
+      <div class="turno-panel" id="t-tarde" style="display:none">
+        <div class="placeholder">Todavía no cargamos las herramientas del <b style="color:var(--tx2)">turno tarde</b>.<br>Decime cuáles usás y las sumo acá.</div>
+      </div>
+      <div class="turno-panel" id="t-manana" style="display:none">
+        <div class="placeholder">Todavía no cargamos las herramientas del <b style="color:var(--tx2)">turno mañana</b>.<br>Decime cuáles usás y las sumo acá.</div>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div id="view-config" class="view" style="display:none">
+      <div class="top"><div><h1>Configuración</h1><div class="date">Ajustes del panel</div></div></div>
+      <div class="cfg">
+        <div class="cfg-card">
+          <div class="cfg-t">Datos del usuario</div>
+          <label class="cfg-l">Nombre</label>
+          <input id="cfgName" class="cfg-i" placeholder="Tu nombre">
+          <label class="cfg-l">Turno</label>
+          <div class="lt-row" id="cfgTurnos">
+            <button type="button" class="lt" data-t="manana">Mañana</button>
+            <button type="button" class="lt" data-t="tarde">Tarde</button>
+            <button type="button" class="lt" data-t="noche">Noche</button>
+          </div>
+          <button class="cfg-save" onclick="saveUser()">Guardar</button>
+        </div>
+        <div class="cfg-card">
+          <div class="cfg-t">Tema</div>
+          <p class="cfg-p">Cambiá entre modo oscuro y claro.</p>
+          <div class="lt-row">
+            <button type="button" class="lt" id="temaDark" onclick="setTema('dark')">Oscuro</button>
+            <button type="button" class="lt" id="temaLight" onclick="setTema('light')">Claro</button>
+          </div>
+        </div>
+        <div class="cfg-card">
+          <div class="cfg-t">Administrar turnos y herramientas</div>
+          <p class="cfg-p">Agregar o sacar herramientas de cada turno desde el panel, sin tocar el código.</p>
+          <span class="cfg-soon">Próximo paso</span>
+        </div>
+        <div class="cfg-card">
+          <div class="cfg-t">Sesión</div>
+          <p class="cfg-p">Cerrás sesión y volvés a la pantalla de inicio.</p>
+          <button class="cfg-save ghost" onclick="logout()">Cerrar sesión</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="modal-bg" id="macroModal">
+  <div class="modal">
+    <div class="mhead"><h2 id="mTitle">—</h2><button class="x" onclick="closeMacro()">✕</button></div>
+    <p class="mque" id="mQue">—</p>
+    <div class="msec">Paso a paso</div>
+    <ol class="mpasos" id="mPasos"></ol>
+    <div class="mnote">
+      <b>⚠ Para que corra la macro:</b>
+      <ol>
+        <li>Se abre en tu Excel de escritorio. Tocá <b style="color:var(--tx)">Habilitar contenido</b> en la barra amarilla.</li>
+        <li>Si sale el cartel rojo de macros bloqueadas: cerrá el archivo, en tu PC hacé clic derecho sobre él → <b style="color:var(--tx)">Propiedades</b> → tildá <b style="color:var(--tx)">Desbloquear</b> → Aceptar, y abrilo de nuevo.</li>
+      </ol>
+    </div>
+    <a class="mbtn" id="mFile">Abrir en Excel (escritorio) →</a>
+    <a class="mweb" id="mWeb" target="_blank" rel="noopener">o abrir en el navegador</a>
+  </div>
+</div>
+<div class="version">v13 · login</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   LINKS — pegá acá las URLs de cada app/macro (en un solo lugar).
+   Los botones sin URL quedan atenuados hasta que la completes.
+   ═══════════════════════════════════════════════════════════ */
+const LINKS = {
+  dashboardExpedicion:  "https://brianflores97.github.io/control-pallets/dashboard_expedicion.html",
+  dashboardPallets:     "https://brianflores97.github.io/control-pallets/dashboard.html",
+  expedicionSupervisor: "https://lively-baklava-ebf933.netlify.app",
+  expedicionCargador:   "https://lively-baklava-ebf933.netlify.app/?cargador",
+  controlPallets:       "https://brianflores97.github.io/control-pallets/",
+  posiciones:           "https://remarkable-entremet-025b67.netlify.app/",
+  gestionDiaria:        "https://iflowsa-my.sharepoint.com/:x:/g/personal/bflores_iflow21_com/IQDVwTqewnYTR5LFfBjxzx_8AeJAU_rwkyZoi2G4VGXNKUU?e=ybxTlz",
+  completos:            "https://iflowsa-my.sharepoint.com/:x:/g/personal/bflores_iflow21_com/IQBqteCfqBsoSZA-6TzHOcPeAZUaUlRVdYNeWeY1dlFPUTc?e=kskcpq",
+  planillaFinal:        "https://iflowsa-my.sharepoint.com/:x:/g/personal/bflores_iflow21_com/IQAobI65Cm7jQ64cHAzCoUbkAReQ5jkRxz_P_HVCndmO3dg?e=mX3vmc",
+  cagnoli:              "https://iflowsa-my.sharepoint.com/:x:/g/personal/bflores_iflow21_com/IQAbUm0NCH5ITqXV3voV1KfwAW2wGNwLcsDxoYatmgUVBXY?e=cGPMcY"
+};
+
+/* ═══ navegación ═══ */
+function show(view,el){
+  document.querySelectorAll('.view').forEach(v=>v.style.display='none');
+  document.getElementById('view-'+view).style.display='block';
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
+  el.classList.add('on');
+}
+/* ═══ resolver links ═══ */
+document.querySelectorAll('[data-link]').forEach(el=>{
+  const url=LINKS[el.dataset.link];
+  if(url){ el.setAttribute('href',url); el.setAttribute('target','_blank'); el.setAttribute('rel','noopener'); }
+  else { el.classList.add('sinlink'); el.addEventListener('click',ev=>{ev.preventDefault();alert('Todavía no configuraste este link.\nEditá el bloque LINKS arriba del archivo y pegá la URL.');}); }
+});
+
+/* ═══ MACROS — pasos + abrir archivo ═══ */
+const MACROS = {
+  gestionDiaria:{ t:"1 · Gestión Diaria", q:"Ordena la programación del día en cada pestaña. Es el primer paso del circuito.", pasos:[
+    "Abrí la macro y habilitá los botones.",
+    "En la hoja Base Maestra, pegá la programación del día.",
+    "Pegá el archivo bajado de UNIGIS (programación interna).",
+    "Corré la macro: reparte todo en cada pestaña.",
+    "Revisá que las pestañas se hayan llenado." ]},
+  completos:{ t:"2 · Consolidado Completos", q:"Arma el consolidado de pallets completos. La info sale del Informe de Movimientos de VKM.", pasos:[
+    "Abrí la macro y habilitá los botones.",
+    "Descargá el Informe de Movimientos de VKM.",
+    "Pegá esa info con el botón de cada empresa.",
+    "Cargá Milkaut, Citric, Tonadita e Ilolay. El consolidado se arma solo." ]},
+  planillaFinal:{ t:"3 · Planilla de Despacho", q:"Donde desemboca todo: junta Gestión Diaria, Completos y el picking, y arma la planilla final por ruta.", pasos:[
+    "Corré primero Gestión Diaria y Completos.",
+    "Bajá de Control de Pallets los registros de picking (la Planilla te los va a pedir).",
+    "Abrí la macro, habilitá y andá a la hoja PANEL.",
+    "Tocá EjecutarTodo. Cuando pida el picking, cargá el archivo bajado.",
+    "Revisá Resultado Final, EXCEDIDOS y CONSOLIDACION." ]},
+  cagnoli:{ t:"Suite Cagnoli", q:"Toma el pedido de Cagnoli del mail, lo separa por dársena según los bultos y genera los carteles A4. Es una macro aparte del circuito de la Planilla.", pasos:[
+    "Abrí la macro y habilitá los botones.",
+    "Cargá / leé el mail de Cagnoli (la macro entiende las tablas del correo).",
+    "La macro separa por dársena según el ranking de bultos.",
+    "Generá e imprimí los carteles A4 para cada dársena." ]},
+};
+function openMacro(k){
+  const m=MACROS[k]; if(!m) return;
+  document.getElementById('mTitle').textContent=m.t;
+  document.getElementById('mQue').textContent=m.q;
+  document.getElementById('mPasos').innerHTML=m.pasos.map(p=>`<li>${p}</li>`).join('');
+  const btn=document.getElementById('mFile'); const web=document.getElementById('mWeb'); const url=LINKS[k];
+  if(url){
+    btn.className='mbtn'; btn.textContent='Abrir en Excel (escritorio) →';
+    btn.setAttribute('href','ms-excel:ofe|u|'+url); btn.removeAttribute('target'); btn.onclick=null;
+    web.style.display='block'; web.setAttribute('href',url); web.textContent='o abrir en el navegador';
+  } else {
+    btn.className='mbtn sinlink'; btn.textContent='Archivo no configurado todavía'; btn.removeAttribute('href'); btn.onclick=(e)=>e.preventDefault();
+    web.style.display='none';
+  }
+  document.getElementById('macroModal').classList.add('open');
+}
+function closeMacro(){ document.getElementById('macroModal').classList.remove('open'); }
+function setTurno(t,el){
+  document.querySelectorAll('.turno-panel').forEach(p=>p.style.display='none');
+  document.getElementById('t-'+t).style.display='block';
+  document.querySelectorAll('.turno-chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+}
+
+/* ═══ LOGIN · USUARIO · TEMA ═══ */
+function lsGet(k,d){try{return localStorage.getItem(k)||d}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+const TDISP={manana:'Mañana',tarde:'Tarde',noche:'Noche'};
+let USER=lsGet('cdr_nombre',''), TURNO=lsGet('cdr_turno','noche'), TEMA=lsGet('cdr_tema','dark');
+
+function applyTema(t){
+  TEMA=t;
+  if(t==='light') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  lsSet('cdr_tema',t);
+  const dd=document.getElementById('temaDark'), ll=document.getElementById('temaLight');
+  if(dd&&ll){ dd.classList.toggle('on',t!=='light'); ll.classList.toggle('on',t==='light'); }
+}
+function setTema(t){ applyTema(t); }
+
+function renderUser(){
+  const ini=(USER||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';
+  const av=document.getElementById('userAv'), nm=document.getElementById('userName'), tr=document.getElementById('userTurno');
+  if(av)av.textContent=ini; if(nm)nm.textContent=USER||'—'; if(tr)tr.textContent=(TDISP[TURNO]||TURNO);
+}
+function doLogin(){
+  const n=document.getElementById('loginName').value.trim();
+  if(!n){ document.getElementById('loginName').focus(); return; }
+  USER=n; lsSet('cdr_nombre',USER); lsSet('cdr_turno',TURNO);
+  const cn=document.getElementById('cfgName'); if(cn)cn.value=USER;
+  renderUser();
+  document.getElementById('login').classList.add('hide');
+  const chip=document.querySelector('.turno-chip[data-turno="'+TURNO+'"]'); if(chip)setTurno(TURNO,chip);
+}
+function logout(){ try{localStorage.removeItem('cdr_nombre')}catch(e){} USER=''; document.getElementById('login').classList.remove('hide'); }
+function saveUser(){
+  const n=document.getElementById('cfgName').value.trim();
+  const t=document.querySelector('#cfgTurnos .lt.on');
+  if(n)USER=n; if(t)TURNO=t.dataset.t;
+  lsSet('cdr_nombre',USER); lsSet('cdr_turno',TURNO); renderUser(); alert('Datos guardados.');
+}
+document.querySelectorAll('#loginTurnos .lt').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#loginTurnos .lt').forEach(x=>x.classList.remove('on'));b.classList.add('on');TURNO=b.dataset.t;}));
+document.querySelectorAll('#cfgTurnos .lt').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#cfgTurnos .lt').forEach(x=>x.classList.remove('on'));b.classList.add('on');}));
+document.getElementById('loginBtn').addEventListener('click',doLogin);
+document.getElementById('loginName').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+(function initUser(){
+  applyTema(TEMA);
+  document.querySelectorAll('#loginTurnos .lt').forEach(x=>x.classList.toggle('on',x.dataset.t===TURNO));
+  document.querySelectorAll('#cfgTurnos .lt').forEach(x=>x.classList.toggle('on',x.dataset.t===TURNO));
+  const cn=document.getElementById('cfgName'); if(cn)cn.value=USER;
+  renderUser();
+  if(USER){ document.getElementById('login').classList.add('hide'); }
+  else { document.getElementById('loginName').focus(); }
+})();
+document.querySelectorAll('[data-macro]').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();openMacro(el.dataset.macro);}));
+document.getElementById('macroModal').addEventListener('click',e=>{ if(e.target.id==='macroModal') closeMacro(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeMacro(); });
+
+/* ═══ fecha ═══ */
+function p2(n){return String(n).padStart(2,'0')}
+(function(){const d=new Date();const DOW=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];const MON=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  document.getElementById('fechaTxt').textContent=`${DOW[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]} · Turno noche`;})();
+
+/* ═══ FIREBASE (solo lectura) ═══ */
+const expCfg={apiKey:"AIzaSyBbVgdGtY3bje4Vcs_zBe3rhA0YGHNP24Q",authDomain:"expedicion-cdr.firebaseapp.com",projectId:"expedicion-cdr",storageBucket:"expedicion-cdr.firebasestorage.app",messagingSenderId:"690097871815",appId:"1:690097871815:web:d879a363def8d78a9057e2"};
+const palCfg={apiKey:"AIzaSyDGBIBnwi8-qcAdykHSqJWFol-JyOE_OzA",authDomain:"control-pallets-4a6ff.firebaseapp.com",databaseURL:"https://control-pallets-4a6ff-default-rtdb.firebaseio.com",projectId:"control-pallets-4a6ff",storageBucket:"control-pallets-4a6ff.firebasestorage.app",messagingSenderId:"445384892626",appId:"1:445384892626:web:511d88f07b24df40bdcd0b"};
+let okExp=false, okPal=false;
+function setLive(){const p=document.getElementById('livePill'),t=document.getElementById('liveTxt');
+  if(okExp||okPal){p.classList.add('ok');t.textContent='EN VIVO';}else{p.classList.remove('ok');t.textContent='Sin conexión';}}
+
+/* Expedición — Firestore jornadas/{hoy}/rutas */
+try{
+  const appE=firebase.initializeApp(expCfg,'exp'); const FS=appE.firestore();
+  const hoy=(()=>{const d=new Date();return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`})();
+  FS.collection('jornadas').doc(hoy).collection('rutas').onSnapshot(snap=>{
+    const rs=snap.docs.map(d=>d.data());
+    const fin=rs.filter(r=>r.fin).length;
+    const lleg=rs.filter(r=>r.inicio||r.fin).length; // llegadas (no usadas en card, dejadas por claridad)
+    document.getElementById('expRutas').textContent=rs.length;
+    document.getElementById('expFaltan').textContent=rs.length-fin;
+    document.getElementById('expFin').textContent=fin;
+    okExp=true; setLive();
+  }, e=>{console.warn('exp',e); setLive();});
+}catch(e){console.warn(e)}
+
+/* Pallets — Realtime DB registros (jornada corte 14:30) */
+try{
+  const appP=firebase.initializeApp(palCfg,'pal'); const RDB=appP.database();
+  const jornadaStr=(()=>{const now=new Date();const d=new Date(now);if(now.getHours()<14||(now.getHours()===14&&now.getMinutes()<30))d.setDate(d.getDate()-1);return `${p2(d.getDate())}/${p2(d.getMonth()+1)}/${d.getFullYear()}`})();
+  RDB.ref('registros').on('value',snap=>{
+    const all=snap.exists()?Object.values(snap.val()):[];
+    const hoy=all.filter(r=>r.fecha===jornadaStr);
+    let bultos=0; const ctrls=new Set();
+    hoy.forEach(r=>{ for(const k in r){ if(k.endsWith('_bultos')) bultos+=Number(r[k])||0; } if(r.ctrl) ctrls.add(r.ctrl); });
+    document.getElementById('palBultos').textContent=bultos.toLocaleString('es-AR');
+    document.getElementById('palRutas').textContent=hoy.length;
+    document.getElementById('palCtrl').textContent=ctrls.size;
+    okPal=true; setLive();
+  }, e=>{console.warn('pal',e); setLive();});
+}catch(e){console.warn(e)}
+</script>
+</body>
+</html>
