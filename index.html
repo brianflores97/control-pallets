@@ -491,6 +491,35 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .rk-bar-wrap{width:60px;height:3px;background:var(--bd);border-radius:2px;margin-top:5px;margin-left:auto}
 .rk-bar{height:3px;border-radius:2px;background:var(--acc);transition:width .5s ease}
 
+/* Ranking de controladores — tablero del controlador.
+   Misma tipografía que el resto: Inter para los nombres, JetBrains Mono para los números. */
+.crk{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);
+  padding:10px 12px;margin-bottom:14px}
+.crk-hd{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.crk-mi{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--tx3);
+  font-weight:500;margin-left:auto;margin-bottom:8px}
+.crk-mi b{color:var(--tx);font-weight:700}
+.crk-ar{font-size:12px;color:var(--tx3);transition:transform .2s;line-height:1;margin-bottom:8px}
+.crk-th{display:flex;align-items:center;gap:10px;padding:0 2px 5px;
+  border-bottom:1px solid var(--bd);
+  font-size:9px;letter-spacing:.5px;text-transform:uppercase;color:var(--tx3);font-weight:600}
+.crk-row{display:flex;align-items:center;gap:10px;padding:7px 2px;
+  border-bottom:1px solid rgba(255,255,255,.04)}
+.crk-row:last-child{border-bottom:none}
+.crk-pos{width:14px;flex:0 0 14px;font-family:'JetBrains Mono',monospace;
+  font-size:10.5px;color:var(--tx3);text-align:right}
+.crk-nm{flex:1;min-width:0;font-size:12px;color:var(--tx2);font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crk-n{flex:0 0 34px;text-align:right;font-family:'JetBrains Mono',monospace;
+  font-size:13.5px;font-weight:700;color:var(--tx)}
+.crk-u{flex:0 0 74px;text-align:right;font-family:'JetBrains Mono',monospace;
+  font-size:10.5px;font-weight:500;color:var(--tx3)}
+.crk-row.yo .crk-nm{color:var(--tx);font-weight:700}
+.crk-row.yo .crk-pos{color:var(--tx2)}
+.crk-pie{font-size:9.5px;color:var(--tx3);margin-top:8px;line-height:1.5}
+.vertag{text-align:center;font-size:9.5px;color:var(--tx3);
+  font-family:'JetBrains Mono',monospace;margin:18px 0 4px;letter-spacing:.3px}
+
 /* ══ COMPANY CONFIG OVERLAY ═══════════════════════════════════ */
 #comp-overlay{
   position:fixed;inset:0;z-index:500;
@@ -1167,6 +1196,19 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
     </div>
   </div>
+  <!-- Ranking de controladores de la jornada -->
+  <div class="crk" id="crk-box" style="display:none">
+    <div class="crk-hd" onclick="toggleCtrlRk()">
+      <span class="sh" style="margin:0">Ranking de controladores</span>
+      <span class="crk-mi" id="crk-mi"></span>
+      <span class="crk-ar" id="crk-ar">▸</span>
+    </div>
+    <div id="crk-wrap" style="display:none">
+      <div class="crk-th"><span class="crk-pos"></span><span class="crk-nm">Controlador</span><span class="crk-n">Rutas</span><span class="crk-u">Bultos/ruta</span></div>
+      <div id="crk-list"></div>
+    </div>
+  </div>
+
   <div class="sh" style="cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between" onclick="toggleRecList()">
     <span>Mis registros de hoy</span>
     <span id="rec-list-arrow" style="font-size:12px;color:var(--tx3);transition:transform .2s">▸</span>
@@ -1174,6 +1216,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
   <div id="rec-list-wrap" style="display:none">
     <div class="rl" id="rec-list"></div>
   </div>
+  <div class="vertag" id="vertag"></div>
 </div>
 </div>
 
@@ -1518,6 +1561,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
 <script>
 /* ── CONSTANTS ─────────────────────────────────────────── */
 const STOR_KEY  = 'pallets_v3';
+/* Versión visible abajo del tablero: si no coincide con la última que subiste,
+   el navegador se quedó con la copia vieja en caché. */
+const VER = 'v1 · ranking de controladores';
 const POLL_MS   = 10000;
 const AV_COLORS = ['#4d8bff','#c084fc','#2dd4bf','#fb923c','#f472b6','#a3e635','#fbbf24','#e879f9'];
 const DRAFT_KEY  = ()=>`pallets_draft_${me||'_'}`;
@@ -2021,6 +2067,7 @@ function refreshDash(recs){
   document.getElementById('st-pi').textContent=pi;
   document.getElementById('st-sa').textContent=sa;
   ctrlRdcRender(recs); // actualizar contadores de rutas del día
+  renderCtrlRank(recs); // ranking de controladores de la jornada
 
   const list=document.getElementById('rec-list');
   if(!mis.length){
@@ -2764,6 +2811,48 @@ function renderRanking(rows){
       </div>
     </div>`;
   }).join('');
+}
+
+/* ══════ RANKING DE CONTROLADORES (tablero del controlador) ══════
+   Cada controlador ve lo suyo y lo de todos los que trabajaron en la jornada.
+   No hace falta leer nada extra: Firebase ya manda el nodo de registros completo,
+   así que esto se calcula con lo que el dispositivo ya tiene. */
+let ctrlRkOpen=false;
+function crkEsc(t){ return String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function toggleCtrlRk(){
+  ctrlRkOpen=!ctrlRkOpen;
+  const w=document.getElementById('crk-wrap'); if(w) w.style.display=ctrlRkOpen?'block':'none';
+  const a=document.getElementById('crk-ar');   if(a) a.style.transform=ctrlRkOpen?'rotate(90deg)':'';
+}
+function rankJornada(recs){
+  const hoy=jornadaStr(), keys=getEmps(), map={};
+  (recs||[]).filter(r=>r.fecha===hoy).forEach(r=>{
+    const n=r.ctrl; if(!n) return;
+    if(!map[n]) map[n]={name:n,rutas:0,bultos:0};
+    map[n].rutas++;
+    keys.forEach(k=>{ map[n].bultos+=r[k+'_bultos']||0; });
+  });
+  return Object.values(map)
+    .sort((a,b)=>b.rutas-a.rutas||b.bultos-a.bultos||a.name.localeCompare(b.name));
+}
+function renderCtrlRank(recs){
+  const box=document.getElementById('crk-box'); if(!box) return;
+  const list=rankJornada(recs);
+  if(!list.length){ box.style.display='none'; return; }
+  box.style.display='block';
+  const i=list.findIndex(c=>c.name===me);
+  document.getElementById('crk-mi').innerHTML = i>=0
+    ? `<b>${i+1}º</b> de ${list.length}`
+    : `${list.length} en turno`;
+  document.getElementById('crk-list').innerHTML=list.map((c,n)=>{
+    const br=c.rutas?Math.round(c.bultos/c.rutas):0;
+    return `<div class="crk-row${c.name===me?' yo':''}">`+
+      `<span class="crk-pos">${n+1}</span>`+
+      `<span class="crk-nm">${crkEsc(c.name)}</span>`+
+      `<span class="crk-n">${c.rutas}</span>`+
+      `<span class="crk-u">${br}</span></div>`;
+  }).join('')+
+  `<div class="crk-pie">Jornada del ${jornadaStr()}. Se ordena por rutas controladas y se actualiza solo.</div>`;
 }
 
 /* ══════════════ CONTROLLER PROFILE ══════════════════════ */
@@ -3816,6 +3905,8 @@ async function init(){
       showSc('login');
       initLogin();
     }
+
+    const vt=document.getElementById('vertag'); if(vt) vt.textContent=VER;
 
     requestAnimationFrame(()=>{
       initBultosState();
