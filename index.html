@@ -77,6 +77,17 @@ window.FB = {
     const snap = await get(ref(db, 'config/preparers'));
     return snap.exists() ? snap.val() : [];
   },
+  // Artículos por cuenta: config/articulos/{cuenta} = {items:[{c,d}], updated}
+  async saveArticulos(emp, data){
+    await set(ref(db, `config/articulos/${emp}`), data);
+  },
+  onArticulos(callback){
+    return onValue(ref(db, 'config/articulos'), snap => callback(snap.exists() ? snap.val() : {}));
+  },
+  // Preparadores en tiempo real (para el teléfono del controlador)
+  onPreparers(callback){
+    return onValue(ref(db, 'config/preparers'), snap => callback(snap.exists() ? snap.val() : []));
+  },
   // Guardar lista de rutas del día
   async saveRdcLista(data){
     await set(ref(db, 'config/rdc_lista'), data);
@@ -517,6 +528,69 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .crk-row.yo .crk-nm{color:var(--tx);font-weight:700}
 .crk-row.yo .crk-pos{color:var(--tx2)}
 .crk-pie{font-size:9.5px;color:var(--tx3);margin-top:8px;line-height:1.5}
+/* Diferencias por cuenta (dentro de cada empresa del formulario) */
+.dif{grid-column:1/-1;border-top:1px solid var(--bd);padding-top:10px;margin-top:3px}
+.dif-hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.dif-t{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
+.dif-sum{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--tx3)}
+.dif-in{width:100%;box-sizing:border-box;background:var(--sf);border:1px solid var(--bd);border-radius:6px;
+  padding:9px 11px;font-size:13px;color:var(--tx);font-family:inherit;margin-bottom:7px;outline:none;transition:border-color .2s}
+.dif-in:focus{border-color:var(--acc)}
+.dif .prep-autocomplete .prep-suggestions{top:calc(100% - 7px)}
+.dif-row{display:flex;gap:7px;align-items:center}
+.dif-row .prep-inp-cant,.dif-row .prep-sign-btn{background:var(--sf)}
+.dif-row .prep-sign-btn.on.pos{background:rgba(22,163,74,.15)}
+.dif-row .prep-sign-btn.on.neg{background:rgba(220,38,38,.12)}
+.dif-list{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.dif-list:empty{display:none}
+.dif-it{background:var(--sf);border:1px solid var(--bd);border-radius:6px;padding:7px 10px;display:flex;flex-direction:column;gap:2px}
+.dif-l1{display:flex;align-items:center;gap:10px}
+.dif-l1 .prep-item-name{font-size:12.5px}
+.dif-l1 .prep-item-cant{font-size:12.5px}
+.dif-l2{display:flex;gap:7px;font-size:11px;color:var(--tx2);min-width:0}
+.dif-cod{font-family:'JetBrains Mono',monospace;font-weight:700;flex-shrink:0}
+.dif-desc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.e-dif{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;margin-left:auto}
+.e-dif:empty{display:none}
+.e-dif:not(:empty) + .etog{margin-left:8px}
+.art-sug{display:flex;gap:10px;align-items:baseline}
+.art-cod{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--tx);flex:0 0 auto;min-width:38px}
+.art-desc{font-size:12px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Diferencias en la tabla del supervisor */
+.dcell{font-family:'JetBrains Mono',monospace;white-space:nowrap;cursor:pointer;user-select:none}
+.dcell .n{color:var(--tx2);font-size:11px}
+.dcell .ar{color:var(--tx3);font-size:10px;margin-left:4px}
+tr.drow td{background:var(--sf2);padding:8px 14px 10px!important}
+.dtab{display:grid;grid-template-columns:auto auto auto 1fr auto;gap:5px 18px;font-size:12px;align-items:baseline;max-width:760px}
+.dtab .h{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--tx3);font-weight:600}
+.dtab .m{font-family:'JetBrains Mono',monospace;font-weight:700}
+.dtab i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px}
+/* Artículos por cuenta (supervisor) */
+#art-overlay{position:fixed;inset:0;z-index:500;background:rgba(7,9,26,.96);backdrop-filter:blur(6px);
+  display:none;flex-direction:column;animation:sli .28s ease;overflow-y:auto}
+#art-overlay.on{display:flex}
+.ac-chips{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.ac-chip{flex:1;min-width:90px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px;background:var(--sf);
+  border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;font-weight:600;color:var(--tx2);cursor:pointer;font-family:inherit}
+.ac-chip .t{display:flex;align-items:center;gap:6px}
+.ac-chip i{width:7px;height:7px;border-radius:50%}
+.ac-chip .n{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;color:var(--tx3)}
+.ac-chip.on{color:var(--tx);border-color:var(--c);background:color-mix(in srgb,var(--c) 10%,var(--sf))}
+.ac-box{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:13px;margin-bottom:12px}
+.ac-hint{font-size:12px;color:var(--tx2);margin-bottom:8px;line-height:1.5}
+.ac-ta{width:100%;box-sizing:border-box;height:150px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);
+  padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--tx2);resize:vertical;outline:none;line-height:1.55}
+.ac-ta:focus{border-color:var(--acc)}
+.ac-prev{display:flex;gap:16px;flex-wrap:wrap;align-items:baseline;margin:10px 0;font-size:12px;color:var(--tx2)}
+.ac-prev:empty{display:none}
+.ac-prev b{font-family:'JetBrains Mono',monospace;color:var(--tx);font-size:15px;margin-right:4px}
+.ac-meta{display:flex;align-items:baseline;gap:8px;margin-bottom:9px}
+.ac-meta .big{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--tx)}
+.ac-meta .s{font-size:11px;color:var(--tx3)}
+.ac-row{display:flex;gap:12px;padding:6px 2px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.ac-row .c{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--tx);flex:0 0 auto;min-width:40px}
+.ac-row .d{color:var(--tx2)}
+.bp:disabled{opacity:.4;cursor:default}
 .vertag{text-align:center;font-size:9.5px;color:var(--tx3);
   font-family:'JetBrains Mono',monospace;margin:18px 0 4px;letter-spacing:.3px}
 
@@ -1265,32 +1339,6 @@ tr:hover td{background:rgba(255,255,255,.02)}
     </div>
   </div>
 
-  <!-- Preparadores -->
-  <div class="fsec locked-wrap">
-    <div class="fst">Preparadores <span class="obs-badge">OPCIONAL</span></div>
-    <div id="prep-inner" class="sec-locked">
-      <div class="prep-hint">Nombre del preparador y diferencia de bultos</div>
-      <div class="prep-autocomplete">
-        <input class="prep-inp-name" id="prep-name" type="text" placeholder="Nombre del preparador"
-          autocomplete="off"
-          oninput="prepSuggest(this.value)"
-          onkeydown="prepKeyNav(event)"
-          onblur="setTimeout(()=>prepHideSug(),200)">
-        <div class="prep-suggestions" id="prep-suggestions"></div>
-      </div>
-      <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px">
-        <div class="prep-sign">
-          <button class="prep-sign-btn pos on" id="prep-sign-pos" onclick="prepSetSign('+')">＋ Más</button>
-          <button class="prep-sign-btn neg" id="prep-sign-neg" onclick="prepSetSign('−')">− Menos</button>
-        </div>
-        <input class="prep-inp-cant" id="prep-cant" type="number" placeholder="Cantidad" min="1"
-          inputmode="numeric" style="flex:1" onkeydown="if(event.key==='Enter')prepAdd()">
-        <button class="prep-add-btn" onclick="prepAdd()">OK</button>
-      </div>
-      <div class="prep-list" id="prep-list"></div>
-    </div>
-  </div>
-
   <!-- Observaciones -->
   <div class="fsec locked-wrap">
     <div class="fst">Observaciones <span class="obs-badge">OPCIONAL</span></div>
@@ -1324,6 +1372,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="sup-acts">
       <button class="bex" style="background:var(--sf2);border-color:var(--bd);color:var(--tx2)" onclick="openCompConfig()">⚙️ Empresas</button>
       <button class="bex" style="background:var(--sf2);border-color:var(--bd);color:var(--tx2)" onclick="openPrepMgmt()">👷 Preparadores</button>
+      <button class="bex" style="background:var(--sf2);border-color:var(--bd);color:var(--tx2)" onclick="openArtMgmt()">📦 Artículos</button>
+      <button class="bex" style="background:transparent;border-color:var(--grn);color:var(--grn)" onclick="exportExcelDif()">⬇ Excel diferencias</button>
       <button class="bex primary" onclick="exportExcel()">⬇ Excel</button>
     </div>
   </div>
@@ -1529,6 +1579,30 @@ tr:hover td{background:rgba(255,255,255,.02)}
   </div>
 </div>
 
+<!-- ══ ARTÍCULOS POR CUENTA ═══════════════════════════════════ -->
+<div id="art-overlay">
+  <div class="prof-hd">
+    <div class="prof-back" onclick="closeArtMgmt()">←</div>
+    <h3>📦 Artículos por cuenta</h3>
+  </div>
+  <div class="prof-body">
+    <div class="ac-chips" id="ac-chips"></div>
+    <div class="ac-box">
+      <div class="sh" id="ac-paste-t">Pegar listado</div>
+      <div class="ac-hint" id="ac-hint"></div>
+      <textarea class="ac-ta" id="ac-ta" spellcheck="false" placeholder="5590&#9;CREMA DE LECHE MILKAUT BALDE 5LT.&#10;6302&#9;DULCE DE L. MILKAUT FAM. P.PLAST. 1" oninput="artPreview()"></textarea>
+      <div class="ac-prev" id="ac-prev"></div>
+      <button class="bp" id="ac-save" onclick="artGuardar()" disabled>Pegá un listado para guardar</button>
+    </div>
+    <div class="ac-box">
+      <div class="sh">Lista actual</div>
+      <div class="ac-meta" id="ac-meta"></div>
+      <input class="fi" id="ac-q" type="text" placeholder="Buscar por código o descripción" oninput="artRenderLista()" style="margin-bottom:6px">
+      <div id="ac-list"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ PROFILE OVERLAY ══════════════════════════════════════════ -->
 <div id="prof-overlay">
   <div class="prof-hd">
@@ -1563,7 +1637,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 const STOR_KEY  = 'pallets_v3';
 /* Versión visible abajo del tablero: si no coincide con la última que subiste,
    el navegador se quedó con la copia vieja en caché. */
-const VER = 'v1 · ranking de controladores';
+const VER = 'v2 · diferencias por cuenta';
 const POLL_MS   = 10000;
 const AV_COLORS = ['#4d8bff','#c084fc','#2dd4bf','#fb923c','#f472b6','#a3e635','#fbbf24','#e879f9'];
 const DRAFT_KEY  = ()=>`pallets_draft_${me||'_'}`;
@@ -2091,7 +2165,7 @@ function refreshDash(recs){
         <span class="rb">${r.id_ruta}</span>
         <span class="rtm">${r.hora_ini||'--'}→${r.hora_fin||'--'}${dur?` · ${fmtMin(dur)}`:''}</span>
       </div>
-      <div class="chips">${chips||'<span style="font-size:11px;color:var(--tx3)">Sin pallets</span>'}</div>
+      <div class="chips">${chips||'<span style="font-size:11px;color:var(--tx3)">Sin pallets</span>'}${difChip(r)}</div>
       <div class="rec-edit">✏ Tap para editar</div>
     </div>`;
   }).join('');
@@ -2128,11 +2202,8 @@ function goForm(id){
         document.getElementById('tb-fin').classList.add('set');
       }
       document.getElementById('inp-obs').value=r.obs||'';
-      // Cargar preparadores si existen
-      if(r.preparadores && r.preparadores.length){
-        prepList = [...r.preparadores];
-        prepRender();
-      }
+      // Diferencias por cuenta (los registros viejos no las tienen)
+      difList = (r.diferencias||[]).map(d=>({...d}));
       activeComps().forEach(c=>{
         const pv=r[c.key+'_pi']||0, sv=r[c.key+'_sa']||0;
         const piEl=document.getElementById('pi-'+c.key);
@@ -2150,6 +2221,8 @@ function goForm(id){
           if(tog) tog.classList.add('open');
         }
       });
+      difRenderAll();
+      difList.forEach(d=>difOpenCard(d.emp));
     }
   }
   showSc('form');
@@ -2164,6 +2237,7 @@ function renderEmpresasForm(){
       <div class="eh" onclick="togEmpresa('${c.key}')">
         <div class="edot" style="background:${c.color}"></div>
         <span class="en">${c.name}</span>
+        <span class="e-dif" id="dhd-${c.key}"></span>
         <span class="etog" id="et-${c.key}">▸</span>
       </div>
       <div class="ebody" id="ebody-${c.key}">
@@ -2187,8 +2261,10 @@ function renderEmpresasForm(){
           </div>
           <div class="calc-hint">Ingresá cada cantidad y tocá ＋ para acumular</div>
         </div>
+        ${difBlockHtml(c)}
       </div>
     </div>`).join('');
+  difRenderAll();
 }
 function resetForm(){
   tIni=null; tFin=null;
@@ -2201,7 +2277,7 @@ function resetForm(){
   document.getElementById('tb-fin').classList.remove('set');
   document.getElementById('inp-obs').value='';
   resetObsTags();
-  prepReset();
+  difReset();
   renderEmpresasForm();
   resetBultos();
   updateFormLock(); // bloquear secciones hasta que se marque inicio
@@ -2248,6 +2324,8 @@ function onPInput(e){
   document.getElementById('eb-'+e).classList.toggle('has',!!(pi||sa));
 }
 function saveRecord(){
+  const pend=difPendiente();
+  if(pend){ toast(`Tenés una diferencia de ${pend.name} sin confirmar: tocá OK o borrala`,'er'); difOpenCard(pend.key); return; }
   const ruta=document.getElementById('inp-ruta').value.trim();
   if(!ruta){ toast('Ingresá el ID de Ruta','er'); return; }
   if(!tIni){ toast('Marcá la hora de inicio antes de guardar','er'); return; }
@@ -2285,7 +2363,9 @@ function saveRecord(){
     hora_ini: tIni||'',
     hora_fin: tFin||'',
     obs: (document.getElementById('inp-obs').value||'').trim(),
-    preparadores: prepList.length ? [...prepList] : []
+    // El recuadro suelto de preparadores ya no existe: se conservan los datos viejos tal cual
+    preparadores: existing?.preparadores || [],
+    diferencias: difList.map(d=>({emp:d.emp,prep:d.prep,cod:d.cod,desc:d.desc,cant:d.cant}))
   };
   activeComps().forEach(c=>{
     rec[c.key+'_pi']=parseInt(document.getElementById('pi-'+c.key).value)||0;
@@ -2445,6 +2525,7 @@ function initSup(){
   renderProw();
   rdcInit();
   initPreparers();
+  initArticulos();
   initCtrlMgmt();
   const recs=loadRecs();
   lastHash=simpleHash(recs);
@@ -2643,14 +2724,15 @@ function renderTableHeader(){
      <th style="color:${c.color}">Bultos ${c.name}</th>`
   ).join('');
   thead.innerHTML=`<tr><th>Fecha</th><th>ID Ruta</th><th>Controlador</th>
-    <th>Inicio</th><th>Fin</th><th>Duración</th>${compCols}<th>Observaciones</th><th>Acciones</th></tr>`;
+    <th>Inicio</th><th>Fin</th><th>Duración</th><th>Diferencias</th>${compCols}<th>Observaciones</th><th>Acciones</th></tr>`;
 }
 
 function renderTable(rows){
   renderTableHeader();
   const comps=loadCompanies();
   const activeCompsCount=comps.filter(c=>c.active).length;
-  const totalCols=6+activeCompsCount*3+2;
+  const totalCols=7+activeCompsCount*3+2;
+  _supTableRows=rows;
   let filtered=rows;
   if(supSearch){
     filtered=rows.filter(r=>
@@ -2692,6 +2774,7 @@ function renderTable(rows){
       <td>${r.hora_ini||'—'}</td>
       <td>${r.hora_fin||'—'}</td>
       <td style="color:var(--grn)">${fmtMin(dur)}</td>
+      ${difCellHtml(r)}
       ${compCols}
       <td>${obsHtml}</td>
       <td style="white-space:nowrap">
@@ -2699,7 +2782,7 @@ function renderTable(rows){
         <button class="act-btn act-edit" onclick="supEditRecord('${r.id}')" title="Editar">✏</button>
         <button class="act-btn act-del" id="del-${r.id}" onclick="supDeleteRecord('${r.id}',this)" title="Eliminar">🗑</button>
       </td>
-    </tr>`;
+    </tr>${difDetalleHtml(r,totalCols)}`;
   }).join('');
 }
 
@@ -2855,6 +2938,413 @@ function renderCtrlRank(recs){
   `<div class="crk-pie">Jornada del ${jornadaStr()}. Se ordena por rutas controladas y se actualiza solo.</div>`;
 }
 
+/* ══════════════ DIFERENCIAS POR CUENTA ══════════════════════
+   Cada diferencia es un artículo: {emp, prep, cod, desc, cant}
+   cant > 0 = sobra, cant < 0 = falta. Se guardan en rec.diferencias. */
+const ART_KEY='pallets_articulos';
+let difList=[];      // diferencias del formulario abierto
+let difSign={};      // por cuenta: '+' sobra, '−' falta
+let difSel={};       // artículo elegido de la lista, por cuenta
+let difMatches={};   // última búsqueda de artículos, por cuenta
+let difPMatches={};  // última búsqueda de preparadores, por cuenta
+
+function loadArts(){ try{ const o=JSON.parse(localStorage.getItem(ART_KEY)||'{}'); return (o&&typeof o==='object')?o:{}; }catch(e){ return {}; } }
+function artItems(v){ return v ? (Array.isArray(v)?v:Object.values(v)).filter(a=>a&&a.c!=null) : []; }
+function artsDe(k){ const a=loadArts()[k]; return a?artItems(a.items):[]; }
+function artNorm(t){ return String(t==null?'':t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function artBuscar(k,q){
+  const toks=artNorm(q).replace(/·/g,' ').split(/\s+/).filter(Boolean);
+  if(!toks.length) return [];
+  const out=artsDe(k).filter(a=>{ const h=artNorm(a.c+' '+a.d); return toks.every(t=>h.includes(t)); });
+  const q0=toks[0];
+  out.sort((x,y)=>(artNorm(y.c).startsWith(q0)?1:0)-(artNorm(x.c).startsWith(q0)?1:0));
+  return out.slice(0,8);
+}
+function artPlaceholder(k){
+  return artsDe(k).length ? 'Artículo: código o descripción' : 'Artículo: código y descripción (sin listado cargado)';
+}
+
+function difBlockHtml(c){
+  const k=c.key;
+  return `<div class="dif">
+    <div class="dif-hd"><span class="dif-t">Diferencias ${crkEsc(c.name)}</span><span class="dif-sum" id="dsum-${k}"></span></div>
+    <div class="prep-autocomplete">
+      <input class="dif-in" id="dprep-${k}" type="text" placeholder="Preparador" autocomplete="off"
+        oninput="difPrepSug('${k}')" onkeydown="difKey(event,'${k}','p')" onblur="setTimeout(()=>difHide('${k}','p'),200)">
+      <div class="prep-suggestions" id="dpsug-${k}"></div>
+    </div>
+    <div class="prep-autocomplete">
+      <input class="dif-in" id="dart-${k}" type="text" placeholder="${artPlaceholder(k)}" autocomplete="off"
+        oninput="difArtSug('${k}')" onkeydown="difKey(event,'${k}','a')" onblur="setTimeout(()=>difHide('${k}','a'),200)">
+      <div class="prep-suggestions" id="dasug-${k}"></div>
+    </div>
+    <div class="dif-row">
+      <div class="prep-sign">
+        <button type="button" class="prep-sign-btn pos" id="dpos-${k}" onclick="difSetSign('${k}','+')">＋ Sobra</button>
+        <button type="button" class="prep-sign-btn neg on" id="dneg-${k}" onclick="difSetSign('${k}','−')">− Falta</button>
+      </div>
+      <input class="prep-inp-cant" id="dcant-${k}" type="number" placeholder="Bultos" min="1" inputmode="numeric"
+        style="flex:1" onkeydown="if(event.key==='Enter')difAdd('${k}')">
+      <button type="button" class="prep-add-btn" onclick="difAdd('${k}')">OK</button>
+    </div>
+    <div class="dif-list" id="dlist-${k}"></div>
+  </div>`;
+}
+function difSetSign(k,sg){
+  difSign[k]=sg;
+  const p=document.getElementById('dpos-'+k), n=document.getElementById('dneg-'+k);
+  if(p) p.classList.toggle('on',sg==='+');
+  if(n) n.classList.toggle('on',sg==='−');
+  const c=document.getElementById('dcant-'+k); if(c) c.focus();
+}
+function difHide(k,t){
+  const el=document.getElementById((t==='p'?'dpsug-':'dasug-')+k);
+  if(el){ el.classList.remove('on'); el.innerHTML=''; }
+}
+function difPrepSug(k){
+  const v=(document.getElementById('dprep-'+k).value||'').trim();
+  const box=document.getElementById('dpsug-'+k);
+  if(!v){ difHide(k,'p'); return; }
+  const q=artNorm(v);
+  const m=loadPreparers().filter(n=>artNorm(n).includes(q))
+    .sort((a,b)=>(artNorm(b).startsWith(q)?1:0)-(artNorm(a).startsWith(q)?1:0)).slice(0,8);
+  difPMatches[k]=m;
+  if(!m.length){ difHide(k,'p'); return; }
+  box.innerHTML=m.map((n,i)=>`<div class="prep-sug-item" onmousedown="event.preventDefault()" onclick="difPickPrep('${k}',${i})">${crkEsc(n)}</div>`).join('');
+  box.classList.add('on');
+}
+function difPickPrep(k,i){
+  const n=(difPMatches[k]||[])[i]; if(n==null) return;
+  document.getElementById('dprep-'+k).value=n;
+  difHide(k,'p');
+  document.getElementById('dart-'+k).focus();
+  scheduleDraftSave();
+}
+function difArtSug(k){
+  difSel[k]=null; // si escribe, deja de valer el artículo elegido
+  const v=document.getElementById('dart-'+k).value||'';
+  const box=document.getElementById('dasug-'+k);
+  const m=artBuscar(k,v);
+  difMatches[k]=m;
+  if(!m.length){ difHide(k,'a'); return; }
+  box.innerHTML=m.map((a,i)=>`<div class="prep-sug-item" onmousedown="event.preventDefault()" onclick="difPickArt('${k}',${i})">`+
+    `<div class="art-sug"><span class="art-cod">${crkEsc(a.c)}</span><span class="art-desc">${crkEsc(a.d)}</span></div></div>`).join('');
+  box.classList.add('on');
+}
+function difPickArt(k,i){
+  const a=(difMatches[k]||[])[i]; if(!a) return;
+  difSel[k]={c:String(a.c),d:String(a.d||'')};
+  document.getElementById('dart-'+k).value=`${a.c} · ${a.d}`;
+  difHide(k,'a');
+  document.getElementById('dcant-'+k).focus();
+}
+function difKey(e,k,t){
+  if(e.key==='Escape'){ difHide(k,t); return; }
+  if(e.key!=='Enter') return;
+  e.preventDefault();
+  if(t==='p'){
+    if((difPMatches[k]||[]).length && document.getElementById('dpsug-'+k).classList.contains('on')) difPickPrep(k,0);
+    else document.getElementById('dart-'+k).focus();
+  } else {
+    if(!difSel[k] && (difMatches[k]||[]).length && document.getElementById('dasug-'+k).classList.contains('on')) difPickArt(k,0);
+    else document.getElementById('dcant-'+k).focus();
+  }
+}
+function difAdd(k){
+  const pEl=document.getElementById('dprep-'+k), aEl=document.getElementById('dart-'+k), cEl=document.getElementById('dcant-'+k);
+  const prep=(pEl.value||'').trim().replace(/\s+/g,' ');
+  const txt=(aEl.value||'').trim();
+  if(!prep){ toast('Escribí el preparador','er'); pEl.focus(); return; }
+  let art=difSel[k];
+  if(!art){
+    if(!txt){ toast('Elegí el artículo','er'); aEl.focus(); return; }
+    const lista=artsDe(k);
+    if(lista.length){
+      const cod=txt.split(/[\s·]+/)[0];
+      art=lista.find(a=>artNorm(a.c)===artNorm(cod));
+      if(!art){ const m=artBuscar(k,txt); if(m.length===1) art=m[0]; }
+      if(!art){ toast('Elegí el artículo de la lista','er'); aEl.focus(); difArtSug(k); return; }
+    } else {
+      // Cuenta sin listado: se toma lo que escribió (código primero si empieza con números)
+      const m=txt.match(/^(\S+)\s*[·\-]?\s*(.*)$/);
+      art=(m && /\d/.test(m[1])) ? {c:m[1],d:m[2]||''} : {c:'',d:txt};
+    }
+  }
+  const abs=parseInt(cEl.value,10);
+  if(!(abs>0)){ toast('Ingresá los bultos (mayor a cero)','er'); cEl.focus(); return; }
+  const sg=difSign[k]||'−';
+  difList.push({emp:k, prep, cod:String(art.c), desc:String(art.d||''), cant: sg==='+'?abs:-abs});
+  aEl.value=''; cEl.value=''; difSel[k]=null; difHide(k,'a');
+  aEl.focus();
+  difRender(k);
+  scheduleDraftSave();
+}
+function difRemove(i){
+  const d=difList[i]; if(!d) return;
+  difList.splice(i,1);
+  difRender(d.emp);
+  scheduleDraftSave();
+}
+function difTotales(list){
+  let s=0,f=0; (list||[]).forEach(d=>{ const c=Number(d.cant)||0; if(c>0) s+=c; else f-=c; });
+  return {s,f,n:(list||[]).length};
+}
+function difRender(k){
+  const box=document.getElementById('dlist-'+k);
+  if(!box) return;
+  const mine=difList.map((d,i)=>({d,i})).filter(x=>x.d.emp===k);
+  box.innerHTML=mine.map(({d,i})=>{
+    const pos=d.cant>0;
+    return `<div class="dif-it"><div class="dif-l1"><span class="prep-item-name">${crkEsc(d.prep)}</span>`+
+      `<span class="prep-item-cant ${pos?'pos':'neg'}">${pos?'+':'−'}${Math.abs(d.cant)}</span>`+
+      `<button type="button" class="prep-remove" onclick="difRemove(${i})" title="Quitar">✕</button></div>`+
+      `<div class="dif-l2">${d.cod?`<span class="dif-cod">${crkEsc(d.cod)}</span>`:''}<span class="dif-desc">${crkEsc(d.desc)}</span></div></div>`;
+  }).join('');
+  const t=difTotales(mine.map(x=>x.d));
+  const sum=document.getElementById('dsum-'+k);
+  if(sum) sum.textContent = t.n ? [t.s?`sobra ${t.s}`:'', t.f?`falta ${t.f}`:''].filter(Boolean).join(' · ') : '';
+  const hd=document.getElementById('dhd-'+k);
+  if(hd) hd.innerHTML = t.n ? `${t.s?`<span style="color:var(--grn)">+${t.s}</span>`:''}${t.s&&t.f?' ':''}${t.f?`<span style="color:var(--red)">−${t.f}</span>`:''}` : '';
+}
+function difRenderAll(){ loadCompanies().forEach(c=>difRender(c.key)); }
+function difOpenCard(k){
+  const eb=document.getElementById('eb-'+k), body=document.getElementById('ebody-'+k), tog=document.getElementById('et-'+k);
+  if(eb) eb.classList.add('has');
+  if(body) body.classList.add('open');
+  if(tog) tog.classList.add('open');
+}
+function difReset(){
+  difList=[]; difSign={}; difSel={}; difMatches={}; difPMatches={};
+}
+// Algo escrito en artículo o bultos sin tocar OK
+function difPendiente(){
+  for(const c of activeComps()){
+    const a=document.getElementById('dart-'+c.key), n=document.getElementById('dcant-'+c.key);
+    if((a&&a.value.trim())||(n&&n.value.trim())) return c;
+  }
+  return null;
+}
+function difRefreshPlaceholders(){
+  activeComps().forEach(c=>{ const a=document.getElementById('dart-'+c.key); if(a) a.placeholder=artPlaceholder(c.key); });
+}
+// Texto para el historial de ediciones
+function difTexto(r){
+  return (r.diferencias||[]).map(d=>`${getEmpName(d.emp)} ${d.prep} ${d.cod} ${d.cant>0?'+':''}${d.cant}`).join(' | ');
+}
+// Columna "Preparadores" del Excel de siempre, con el mismo formato que antes
+function prepsTexto(r){
+  if((r.diferencias||[]).length){
+    const m={};
+    r.diferencias.forEach(d=>{ m[d.prep]=(m[d.prep]||0)+(Number(d.cant)||0); });
+    return Object.entries(m).map(([n,c])=>`${n} ${c>0?'+':''}${c}`).join(' | ');
+  }
+  return (r.preparadores||[]).map(p=>`${p.nombre} ${p.cantidad>0?'+':''}${p.cantidad}`).join(' | ');
+}
+// Chip en "Mis registros" del controlador
+function difChip(r){
+  const t=difTotales(r.diferencias);
+  if(!t.n) return '';
+  return `<span class="ch" style="background:var(--sf2);color:var(--tx2);font-family:'JetBrains Mono',monospace">Dif.`+
+    `${t.s?` <span style="color:var(--grn)">+${t.s}</span>`:''}${t.f?` <span style="color:var(--red)">−${t.f}</span>`:''}</span>`;
+}
+
+/* -- Tabla del supervisor -- */
+let _supTableRows=[];
+const supDifOpen=new Set();
+function difCellHtml(r){
+  const t=difTotales(r.diferencias);
+  if(!t.n) return '<td style="color:var(--tx3)">—</td>';
+  return `<td class="dcell" onclick="toggleSupDif('${r.id}')">`+
+    `${t.s?`<span style="color:var(--grn)">+${t.s}</span> `:''}${t.f?`<span style="color:var(--red)">−${t.f}</span> `:''}`+
+    `<span class="n">· ${t.n} art.</span><span class="ar">${supDifOpen.has(r.id)?'▾':'▸'}</span></td>`;
+}
+function difDetalleHtml(r,cols){
+  if(!supDifOpen.has(r.id) || !(r.diferencias||[]).length) return '';
+  const filas=r.diferencias.map(d=>{
+    const c=compByKey(d.emp), pos=d.cant>0;
+    return `<span><i style="background:${c.color}"></i>${crkEsc(c.name)}</span><span>${crkEsc(d.prep)}</span>`+
+      `<span class="m">${crkEsc(d.cod)||'—'}</span><span>${crkEsc(d.desc)}</span>`+
+      `<span class="m" style="color:${pos?'var(--grn)':'var(--red)'};text-align:right">${pos?'+':'−'}${Math.abs(d.cant)}</span>`;
+  }).join('');
+  return `<tr class="drow"><td colspan="${cols}"><div class="dtab">`+
+    `<span class="h">Cuenta</span><span class="h">Preparador</span><span class="h">Código</span><span class="h">Descripción</span><span class="h" style="text-align:right">Bultos</span>`+
+    `${filas}</div></td></tr>`;
+}
+function toggleSupDif(id){
+  if(supDifOpen.has(id)) supDifOpen.delete(id); else supDifOpen.add(id);
+  renderTable(_supTableRows);
+}
+
+/* -- Excel diferencias: solo las rutas con diferencias, una fila por artículo -- */
+function exportExcelDif(){
+  if(typeof XLSX === 'undefined'){
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=()=>{ toast('Listo, generando Excel...','in'); setTimeout(doExportDif,100); };
+    s.onerror=()=>toast('Error al cargar librería Excel','er');
+    document.head.appendChild(s);
+    toast('Cargando Excel...','in');
+    return;
+  }
+  doExportDif();
+}
+function difFilasExcel(rows){
+  return rows.filter(r=>(r.diferencias||[]).length).flatMap(r=>r.diferencias.map(d=>{
+    const cod=/^\d+$/.test(String(d.cod))?Number(d.cod):(d.cod||'');
+    return [r.fecha, r.id_ruta, r.ctrl, getEmpName(d.emp), d.prep, cod, d.desc, d.cant>0?'Sobra':'Falta', Number(d.cant)||0];
+  }));
+}
+function doExportDif(){
+  const data=difFilasExcel(exportRows());
+  if(!data.length){ toast('No hubo diferencias en este período','in'); return; }
+  const header=['Fecha','ID Ruta','Controlador','Cuenta','Preparador','Código','Descripción','Tipo','Bultos'];
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([header,...data]);
+  ws['!cols']=[12,10,18,12,20,10,40,8,8].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws,'Diferencias');
+  XLSX.writeFile(wb,`Diferencias_${exportLabel()}.xlsx`);
+  toast('Excel de diferencias exportado ✓','ok');
+}
+
+/* -- Datos que el controlador necesita en su teléfono -- */
+let _artSub=false, _prepSub=false;
+function initArticulos(){
+  if(_artSub || !window.FB_READY || !window.FB || !window.FB.onArticulos) return;
+  _artSub=true;
+  try{
+    window.FB.onArticulos(data=>{
+      try{ localStorage.setItem(ART_KEY, JSON.stringify(data||{})); }catch(e){}
+      difRefreshPlaceholders();
+      if(document.getElementById('art-overlay')?.classList.contains('on')) artRenderAll(false);
+    });
+  }catch(e){ _artSub=false; }
+}
+function initPrepLive(){
+  if(_prepSub || !window.FB_READY || !window.FB || !window.FB.onPreparers) return;
+  _prepSub=true;
+  try{
+    window.FB.onPreparers(v=>{
+      const list=Array.isArray(v)?v.filter(Boolean):Object.values(v||{});
+      if(list.length) localStorage.setItem(PREP_KEY, JSON.stringify(list));
+    });
+  }catch(e){ _prepSub=false; }
+}
+
+/* ══════════════ ARTÍCULOS POR CUENTA (supervisor) ══════════ */
+let artEmp=null, artParsed=null, artConfirmHasta=0;
+function openArtMgmt(){
+  initArticulos();
+  const comps=activeComps();
+  if(!artEmp || !comps.find(c=>c.key===artEmp)) artEmp=comps[0]?comps[0].key:null;
+  document.getElementById('art-overlay').classList.add('on');
+  artRenderAll(true);
+}
+function closeArtMgmt(){ document.getElementById('art-overlay').classList.remove('on'); }
+function artSelEmp(k){ artEmp=k; artRenderAll(true); }
+function artRenderAll(limpiar){
+  if(limpiar){
+    document.getElementById('ac-ta').value='';
+    document.getElementById('ac-q').value='';
+    artParsed=null; artConfirmHasta=0;
+  }
+  const arts=loadArts();
+  document.getElementById('ac-chips').innerHTML=activeComps().map(c=>{
+    const n=artItems(arts[c.key]&&arts[c.key].items).length;
+    return `<button type="button" class="ac-chip${c.key===artEmp?' on':''}" style="--c:${c.color}" onclick="artSelEmp('${c.key}')">`+
+      `<span class="t"><i style="background:${c.color}"></i>${crkEsc(c.name)}</span><span class="n">${n?n+' art.':'sin cargar'}</span></button>`;
+  }).join('');
+  const nm=artEmp?getEmpName(artEmp):'';
+  document.getElementById('ac-paste-t').textContent=`Pegar listado de ${nm}`;
+  document.getElementById('ac-hint').textContent='Copiá del Excel las dos columnas, código y descripción, y pegalas acá. Reemplaza la lista actual de esta cuenta.';
+  artPreview();
+  artRenderLista();
+}
+// Lee lo pegado: columnas separadas por tabulación (Excel) o por punto y coma (CSV)
+function artParse(txt){
+  const items=[], vistos=new Set(); let rep=0, corr=0;
+  String(txt||'').split(/\r?\n/).forEach(l=>{
+    if(!l.trim()) return;
+    let p=l.split('\t');
+    if(p.length<2) p=l.split(';');
+    if(p.length<2){ const m=l.trim().match(/^(\S+)\s+(.+)$/); p=m?[m[1],m[2]]:[l]; }
+    const c=String(p[0]).replace(/"/g,'').trim();
+    let d=p.slice(1).join(' ').replace(/"/g,'').replace(/\s+/g,' ').trim();
+    if(!c) return;
+    if(/^(art[ií]culo|art\.?|c[oó]digo|cod\.?)$/i.test(c)) return; // fila de títulos
+    const d0=d;
+    d=d.replace(/JAM\?/g,'JAMÓN').replace(/CL\?ICO/g,'CLÁSICO');
+    if(d!==d0) corr++;
+    if(vistos.has(c)){ rep++; return; }
+    vistos.add(c);
+    items.push({c,d});
+  });
+  return {items,rep,corr};
+}
+function artPreview(){
+  const txt=document.getElementById('ac-ta').value;
+  const prev=document.getElementById('ac-prev'), btn=document.getElementById('ac-save');
+  artConfirmHasta=0;
+  if(!txt.trim()){
+    artParsed=null; prev.innerHTML='';
+    btn.disabled=true; btn.textContent='Pegá un listado para guardar';
+    return;
+  }
+  artParsed=artParse(txt);
+  prev.innerHTML=`<span><b>${artParsed.items.length}</b>artículos leídos</span><span><b>${artParsed.rep}</b>repetidos</span><span><b>${artParsed.corr}</b>descripciones corregidas</span>`;
+  btn.disabled=!artParsed.items.length;
+  btn.textContent=artParsed.items.length?`Reemplazar lista de ${getEmpName(artEmp)}`:'No se encontraron artículos';
+}
+async function artGuardar(){
+  if(!artEmp || !artParsed || !artParsed.items.length) return;
+  const btn=document.getElementById('ac-save');
+  const antes=artsDe(artEmp).length, nuevos=artParsed.items.length;
+  if(antes && Date.now()>artConfirmHasta){
+    artConfirmHasta=Date.now()+5000;
+    btn.textContent=`Tocá de nuevo: reemplazar ${antes} por ${nuevos}`;
+    return;
+  }
+  artConfirmHasta=0;
+  const data={items:artParsed.items, updated:Date.now()};
+  const nm=getEmpName(artEmp);
+  if(window.FB_READY && window.FB && window.FB.saveArticulos){
+    btn.disabled=true; btn.textContent='Guardando...';
+    try{
+      await window.FB.saveArticulos(artEmp,data);
+    }catch(e){
+      btn.disabled=false; btn.textContent=`Reemplazar lista de ${nm}`;
+      toast('No se pudo guardar en Firebase: '+(e&&(e.code||e.message)||'error'),'er');
+      return;
+    }
+    const all=loadArts(); all[artEmp]=data;
+    localStorage.setItem(ART_KEY, JSON.stringify(all));
+    toast(`Lista de ${nm} guardada: ${nuevos} artículos ✓`,'ok');
+  } else {
+    const all=loadArts(); all[artEmp]=data;
+    localStorage.setItem(ART_KEY, JSON.stringify(all));
+    toast('Sin conexión: quedó guardada solo en este equipo','er');
+  }
+  artRenderAll(true);
+}
+function artRenderLista(){
+  const meta=document.getElementById('ac-meta'), list=document.getElementById('ac-list');
+  const a=loadArts()[artEmp];
+  const items=artItems(a&&a.items);
+  if(!items.length){
+    meta.innerHTML='<span class="s">Esta cuenta todavía no tiene artículos cargados.</span>';
+    list.innerHTML=''; return;
+  }
+  const f=a.updated?new Date(a.updated):null;
+  const fs=f?`${String(f.getDate()).padStart(2,'0')}/${String(f.getMonth()+1).padStart(2,'0')}/${f.getFullYear()} ${String(f.getHours()).padStart(2,'0')}:${String(f.getMinutes()).padStart(2,'0')}`:'';
+  meta.innerHTML=`<span class="big">${items.length}</span><span class="s">artículos${fs?' · actualizada el '+fs:''}</span>`;
+  const q=document.getElementById('ac-q').value;
+  const toks=artNorm(q).split(/\s+/).filter(Boolean);
+  const fil=toks.length?items.filter(x=>{ const h=artNorm(x.c+' '+x.d); return toks.every(t=>h.includes(t)); }):items;
+  const MAX=50;
+  list.innerHTML=fil.slice(0,MAX).map(x=>`<div class="ac-row"><span class="c">${crkEsc(x.c)}</span><span class="d">${crkEsc(x.d)}</span></div>`).join('')+
+    (fil.length>MAX?`<div class="ac-row" style="border:none"><span class="d" style="color:var(--tx3)">y ${fil.length-MAX} más — usá el buscador</span></div>`:'')+
+    (!fil.length?`<div class="ac-row" style="border:none"><span class="d" style="color:var(--tx3)">Sin resultados</span></div>`:'');
+}
+
 /* ══════════════ CONTROLLER PROFILE ══════════════════════ */
 function openProfile(name){
   profCtrl=name; profPeriod='hoy';
@@ -2991,7 +3481,7 @@ function exportExcel(){
   }
   doExport();
 }
-function doExport(){
+function exportRows(){
   const allRecs=loadRecs();
   let rows;
   if(routeFilter){
@@ -3001,7 +3491,13 @@ function doExport(){
   } else {
     rows = filterByPeriod(allRecs, supPeriod==='todo'?'todo':supPeriod);
   }
-  rows = rows.sort((a,b)=>a.ts-b.ts);
+  return rows.sort((a,b)=>a.ts-b.ts);
+}
+function exportLabel(){
+  return routeFilter?`Ruta_${routeFilter}`:specificDate?specificDate.replace(/\//g,'-'):(supPeriod==='hoy'?todayStr().replace(/\//g,'-'):supPeriod);
+}
+function doExport(){
+  const rows=exportRows();
   if(!rows.length){ toast('No hay datos para exportar','er'); return; }
 
   const comps=loadCompanies();
@@ -3012,7 +3508,7 @@ function doExport(){
     const dur=calcMin(r.hora_ini,r.hora_fin);
     const compData=comps.flatMap(c=>[r[c.key+'_pi']||0, r[c.key+'_sa']||0, r[c.key+'_bultos']||0]);
     // Formatear preparadores: "Flores +35 | García -10"
-    const preps = (r.preparadores||[]).map(p=>`${p.nombre} ${p.cantidad>0?'+':''}${p.cantidad}`).join(' | ');
+    const preps = prepsTexto(r);
     return [r.fecha,r.id_ruta,r.ctrl,r.hora_ini||'',r.hora_fin||'',dur||'',...compData,r.obs||'',preps];
   });
 
@@ -3022,7 +3518,7 @@ function doExport(){
   const ws=XLSX.utils.aoa_to_sheet([header,...data]);
   ws['!cols']=[...baseCols,...compCols,30,35].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws,'Control Pallets');
-  const label=routeFilter?`Ruta_${routeFilter}`:specificDate?specificDate.replace(/\//g,'-'):(supPeriod==='hoy'?todayStr().replace(/\//g,'-'):supPeriod);
+  const label=exportLabel();
   XLSX.writeFile(wb,`Control_Pallets_${label}.xlsx`);
   toast('Excel exportado ✓','ok');
 }
@@ -3048,6 +3544,7 @@ function saveDraft(){
       bultos: {...(bultosState[c.key]||{total:0,parts:[]})}
     };
   });
+  draft.diferencias = difList.map(d=>({...d}));
   try{ localStorage.setItem(DRAFT_KEY(),JSON.stringify(draft)); }catch(e){}
 }
 /* ══════════════ TAGS RÁPIDOS DE OBSERVACIONES ══════════════ */
@@ -3165,6 +3662,7 @@ function restoreDraft(){
       document.getElementById('btn-ini').disabled=true;
       document.getElementById('btn-fin').disabled=false;
       document.getElementById('tb-ini').classList.add('set');
+      updateFormLock(); // sin esto, al retomar el borrador las secciones quedaban bloqueadas
     }
     if(d.hora_fin){
       tFin=d.hora_fin;
@@ -3191,6 +3689,11 @@ function restoreDraft(){
           if(tog) tog.classList.add('open');
         }
       });
+    }
+    if(Array.isArray(d.diferencias) && d.diferencias.length){
+      difList = d.diferencias.map(x=>({...x}));
+      difRenderAll();
+      difList.forEach(x=>difOpenCard(x.emp));
     }
     document.getElementById('draft-banner').style.display='none';
     toast('Borrador retomado ✓','ok');
@@ -3349,6 +3852,8 @@ function buildDiff(oldRec, newRec){
       changes.push({label:f.label, from:oldVal||'—', to:newVal||'—'});
     }
   });
+  const dOld=difTexto(oldRec), dNew=difTexto(newRec);
+  if(dOld!==dNew) changes.push({label:'Diferencias', from:dOld||'—', to:dNew||'—'});
   return changes;
 }
 
@@ -3917,6 +4422,8 @@ async function init(){
         lastHash=simpleHash(recs);
         refreshDash(recs);
         ctrlRdcInit(); // suscribirse a lista de rutas del día en tiempo real
+        initPrepLive(); // preparadores para el autocompletado
+        initArticulos(); // artículos de cada cuenta
         setTimeout(()=>{ updateOnlineStatus(); initPWA(); startPoll(); }, 500);
       } else if(role==='supervisor'){
         requestAnimationFrame(()=>{
