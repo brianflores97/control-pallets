@@ -536,8 +536,11 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .dif-in{width:100%;box-sizing:border-box;background:var(--sf);border:1px solid var(--bd);border-radius:6px;
   padding:9px 11px;font-size:13px;color:var(--tx);font-family:inherit;margin-bottom:7px;outline:none;transition:border-color .2s}
 .dif-in:focus{border-color:var(--acc)}
-.dif .prep-autocomplete .prep-suggestions{top:calc(100% - 7px)}
+.dif .prep-autocomplete .prep-suggestions{position:static;max-height:none;overflow:visible;margin:-8px 0 7px;
+  border-radius:0 0 6px 6px;box-shadow:none}
 .dif-row{display:flex;gap:7px;align-items:center}
+.dif-mas{padding:8px 12px;font-size:11px;color:var(--tx3)}
+.dif .prep-suggestions .art-desc{white-space:normal;overflow:visible;line-height:1.35}
 .dif-row .prep-inp-cant,.dif-row .prep-sign-btn{background:var(--sf)}
 .dif-row .prep-sign-btn.on.pos{background:rgba(22,163,74,.15)}
 .dif-row .prep-sign-btn.on.neg{background:rgba(220,38,38,.12)}
@@ -1637,7 +1640,7 @@ tr.drow td{background:var(--sf2);padding:8px 14px 10px!important}
 const STOR_KEY  = 'pallets_v3';
 /* Versión visible abajo del tablero: si no coincide con la última que subiste,
    el navegador se quedó con la copia vieja en caché. */
-const VER = 'v2 · diferencias por cuenta';
+const VER = 'v3 · lista de artículos completa';
 const POLL_MS   = 10000;
 const AV_COLORS = ['#4d8bff','#c084fc','#2dd4bf','#fb923c','#f472b6','#a3e635','#fbbf24','#e879f9'];
 const DRAFT_KEY  = ()=>`pallets_draft_${me||'_'}`;
@@ -2952,13 +2955,14 @@ function loadArts(){ try{ const o=JSON.parse(localStorage.getItem(ART_KEY)||'{}'
 function artItems(v){ return v ? (Array.isArray(v)?v:Object.values(v)).filter(a=>a&&a.c!=null) : []; }
 function artsDe(k){ const a=loadArts()[k]; return a?artItems(a.items):[]; }
 function artNorm(t){ return String(t==null?'':t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
-function artBuscar(k,q){
+function artBuscar(k,q){ return artBuscarTodos(k,q).slice(0,8); }
+function artBuscarTodos(k,q){
   const toks=artNorm(q).replace(/·/g,' ').split(/\s+/).filter(Boolean);
   if(!toks.length) return [];
   const out=artsDe(k).filter(a=>{ const h=artNorm(a.c+' '+a.d); return toks.every(t=>h.includes(t)); });
   const q0=toks[0];
   out.sort((x,y)=>(artNorm(y.c).startsWith(q0)?1:0)-(artNorm(x.c).startsWith(q0)?1:0));
-  return out.slice(0,8);
+  return out;
 }
 function artPlaceholder(k){
   return artsDe(k).length ? 'Artículo: código o descripción' : 'Artículo: código y descripción (sin listado cargado)';
@@ -3024,11 +3028,12 @@ function difArtSug(k){
   difSel[k]=null; // si escribe, deja de valer el artículo elegido
   const v=document.getElementById('dart-'+k).value||'';
   const box=document.getElementById('dasug-'+k);
-  const m=artBuscar(k,v);
+  const todos=artBuscarTodos(k,v), m=todos.slice(0,8);
   difMatches[k]=m;
   if(!m.length){ difHide(k,'a'); return; }
   box.innerHTML=m.map((a,i)=>`<div class="prep-sug-item" onmousedown="event.preventDefault()" onclick="difPickArt('${k}',${i})">`+
-    `<div class="art-sug"><span class="art-cod">${crkEsc(a.c)}</span><span class="art-desc">${crkEsc(a.d)}</span></div></div>`).join('');
+    `<div class="art-sug"><span class="art-cod">${crkEsc(a.c)}</span><span class="art-desc">${crkEsc(a.d)}</span></div></div>`).join('')+
+    (todos.length>m.length?`<div class="dif-mas">y ${todos.length-m.length} más · seguí escribiendo para achicar la lista</div>`:'');
   box.classList.add('on');
 }
 function difPickArt(k,i){
