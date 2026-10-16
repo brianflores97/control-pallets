@@ -38,6 +38,10 @@ window.DB = {
   },
   onCompanies(cb){
     return onValue(ref(db, 'config/companies'), snap => cb(snap.exists() ? snap.val() : null));
+  },
+  // Informes VKM resumidos que carga el supervisor desde la app (config/vkm/{AAAA-MM-DD}/{cuenta})
+  onVkm(cb){
+    return onValue(ref(db, 'config/vkm'), snap => cb(snap.exists() ? snap.val() : {}));
   }
 };
 window.DB_READY = true;
@@ -278,6 +282,65 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .rk-num{font-size:19px;font-weight:800;color:var(--acc);font-variant-numeric:tabular-nums}
 .rk-lbl{font-size:10px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
 
+/* ══ CALIDAD DE PREPARACIÓN ══ */
+.cq-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px 19px;box-shadow:var(--sh);margin-top:16px}
+
+
+
+
+.cq-kpis{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:11px;margin-top:14px}
+.cq-k{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);padding:13px 15px}
+.cq-k .l{font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.cq-k .v{font-size:26px;font-weight:800;color:var(--tx);line-height:1;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.cq-k .v.big{font-size:34px}
+.cq-k .x{font-size:11px;color:var(--tx2);font-weight:600;margin-top:8px}
+.cq-k .x .s{color:var(--grn)} .cq-k .x .f{color:var(--red)}
+.cq-k .kpi-delta{margin-top:8px}
+.cq-grid{display:grid;grid-template-columns:1fr 1.25fr;gap:12px;margin-top:12px}
+.cq-box{border:1px solid var(--bd);border-radius:var(--rs);padding:14px 16px;min-width:0}
+.cq-box .chart-sub{margin-bottom:10px}
+.cq-pr{display:flex;align-items:center;gap:11px;padding:8px 0;border-bottom:1px solid var(--bd)}
+.cq-pr:last-child{border-bottom:none}
+.cq-pr .rk-pos{width:24px;height:24px;font-size:11px}
+.cq-pr .info{flex:1;min-width:0}
+.cq-pr .n{font-size:12.5px;font-weight:700;color:var(--tx)}
+.cq-pr .sb{font-size:10.5px;color:var(--tx2);font-weight:500;margin-top:1px}
+.cq-pr .tr{height:4px;background:var(--bd);border-radius:2px;margin-top:6px;overflow:hidden}
+.cq-pr .fl{height:4px;border-radius:2px;background:var(--red);opacity:.75}
+.cq-pr .p{font-size:16px;font-weight:800;color:var(--tx);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cq-ok{font-size:11px;color:var(--tx2);font-weight:600;margin-top:10px;line-height:1.5}
+.cq-ok b{color:var(--grn)}
+.cq-t{width:100%;border-collapse:collapse;font-size:12px}
+.cq-t th{padding:0 8px 8px;text-align:left;font-size:9.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bd);white-space:nowrap}
+.cq-t td{padding:8px;border-bottom:1px solid var(--bd);font-weight:600;color:var(--tx2);font-variant-numeric:tabular-nums}
+.cq-t tr:last-child td{border-bottom:none}
+.cq-t .r{text-align:right}
+.cq-t .c{color:var(--tx);font-weight:800}
+.cq-t .d{max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.cq-t .p{color:var(--tx);font-weight:800;white-space:nowrap}
+.cq-t i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px}
+.cq-warn{margin-top:12px;font-size:11px;color:#a16207;font-weight:600;line-height:1.5}
+.cq-tw{overflow-x:auto}
+.cq-top{display:grid;grid-template-columns:300px 1fr;gap:12px;margin-top:15px}
+.cq-sum{width:100%;border-collapse:collapse;font-size:12px}
+.cq-sum th{padding:0 9px 9px;text-align:right;font-size:9.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bd);white-space:nowrap}
+.cq-sum th:first-child,.cq-sum td:first-child{text-align:left}
+.cq-sum td{padding:10px 9px;border-bottom:1px solid var(--bd);text-align:right;font-weight:600;color:var(--tx2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cq-sum tr.cu{cursor:pointer} .cq-sum tr.cu:hover td{background:var(--sf2)}
+.cq-sum tr.sel td{background:var(--acc-soft)}
+.cq-sum .nm{font-weight:700;color:var(--tx)}
+.cq-sum .p{font-size:15px;font-weight:800;color:var(--tx)}
+.cq-sum .s{color:var(--grn)} .cq-sum .f{color:var(--red)}
+.cq-sum tr.tot td{border-bottom:none;border-top:2px solid var(--bd2);color:var(--tx);font-weight:800}
+.cq-sum i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;vertical-align:-1px}
+.cq-sum .kpi-delta{margin:0}
+.cq-det{margin-top:16px;border-top:1px solid var(--bd);padding-top:15px}
+.cq-det-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.cq-det-t{font-size:12px;font-weight:700;color:var(--tx2)}
+.cq-det-t b{color:var(--tx);font-size:14px}
+.metric-tab .tp{opacity:.75;font-weight:600;margin-left:5px}
+@media(max-width:900px){.cq-kpis{grid-template-columns:1fr 1fr}.cq-grid{grid-template-columns:1fr}.cq-top{grid-template-columns:1fr}}
+.vertag{text-align:center;font-size:9.5px;color:var(--tx3);font-weight:600;margin-top:6px;letter-spacing:.3px}
 .foot{margin-top:26px;text-align:center;font-size:10px;color:var(--tx3);font-weight:600}
 
 /* ══ LOADING ══ */
@@ -445,6 +508,20 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
     </div>
   </div>
 
+  <div class="cq-card">
+    <div class="rank-head" onclick="toggleCq()">
+      <div>
+        <div class="chart-title">Calidad de preparación</div>
+        <div class="chart-sub" id="cq-sub">—</div>
+      </div>
+      <div class="rank-head-right">
+        <span class="rank-lead" id="cq-lead"></span>
+        <span class="rank-arrow" id="cq-arrow">▸</span>
+      </div>
+    </div>
+    <div id="cq-body" style="display:none"></div>
+  </div>
+
   <div class="table-card">
     <div class="table-head" onclick="toggleTable()">
       <div>
@@ -468,6 +545,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
   </div>
 
   <div class="foot" id="foot">Solo lectura · sincronizado en tiempo real con Firebase</div>
+  <div class="vertag" id="vertag"></div>
 </div>
 
 <script>
@@ -479,6 +557,8 @@ let rangeFrom=null, rangeTo=null, rankMetric='bultos';
 let tableSearch='';
 let recsReady=false;
 let donutChart=null, lineChart=null, barChart=null;
+const VER='v2 · calidad de preparación por cuenta';
+let vkmData={}, cqChart=null;
 
 const PERIODS=[{k:'hoy',l:'Hoy'},{k:'semana',l:'Semana'},{k:'mes',l:'Mes'},{k:'rango',l:'Rango'},{k:'todo',l:'Todo'}];
 const DOW=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -1106,12 +1186,209 @@ function render(){
     renderDonut(cur);
     renderLine(series);
     renderBars(series);
+    renderCalidad();
   } else {
     setTimeout(render,250); return;
   }
   const now=new Date();
   document.getElementById('foot').textContent=
     `Solo lectura · ${allRecs.length} registros · última actualización ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+}
+
+/* ══════════ CALIDAD DE PREPARACIÓN (solo lectura) ══════════
+   Misma cuenta que la app: % de error = bultos con diferencia (controladores) ÷ bultos pickeados (informe VKM).
+   Se cuenta por jornada: solo entran las diferencias de jornadas y cuentas que tienen informe cargado. */
+function cqEsc(t){ return String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function cqNorm(t){ return String(t==null?'':t).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim(); }
+function cqCod(c){ return String(c==null?'':c).trim().toUpperCase().replace(/^0+(?=\d)/,''); }
+function cqLista(v){ return v?(Array.isArray(v)?v:Object.values(v)).filter(Boolean):[]; }
+function cqKeyToFecha(k){ const [a,m,d]=String(k).split('-'); return `${d}/${m}/${a}`; }
+function cqPct(e,b){ return b?(e/b*100).toFixed(2).replace('.',',')+' %':'—'; }
+function cqN(n){ return Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:2}); }
+function cqAdd(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); x.setHours(0,0,0,0); return x; }
+// Rango de jornadas del período actual y del anterior (mismo largo)
+function cqRangos(){
+  if(period==='rango'&&rangeFrom&&rangeTo){
+    const a=cqAdd(rangeFrom,0), b=cqAdd(rangeTo,0), len=Math.round((b-a)/86400000)+1;
+    return {cur:[a,b],prev:[cqAdd(a,-len),cqAdd(a,-1)]};
+  }
+  if(specificDate){ const d=parseFecha(specificDate); return {cur:[d,d],prev:[cqAdd(d,-1),cqAdd(d,-1)]}; }
+  const j=jornadaDate();
+  if(period==='hoy')    return {cur:[j,j],prev:[cqAdd(j,-1),cqAdd(j,-1)]};
+  if(period==='semana') return {cur:[cqAdd(j,-6),j],prev:[cqAdd(j,-13),cqAdd(j,-7)]};
+  if(period==='mes')    return {cur:[cqAdd(j,-29),j],prev:[cqAdd(j,-59),cqAdd(j,-30)]};
+  return {cur:null,prev:null};
+}
+function cqEn(r){
+  if(!r) return ()=>true;
+  const a=r[0].getTime(), b=r[1].getTime();
+  return f=>{ if(!f) return false; const t=parseFecha(f).getTime(); return t>=a&&t<=b; };
+}
+function cqCalcular(rango, emps){
+  const en=cqEn(rango);
+  const reps=[];
+  Object.keys(vkmData||{}).forEach(k=>{
+    const f=cqKeyToFecha(k); if(!en(f)) return;
+    emps.forEach(e=>{ const r=vkmData[k]&&vkmData[k][e]; if(r) reps.push({fecha:f,emp:e,r}); });
+  });
+  const con=new Set(reps.map(x=>x.fecha+'|'+x.emp));
+  const prep={}, arts={}, porDia={};
+  let b=0,e=0,s=0,f=0;
+  reps.forEach(({fecha,emp,r})=>{
+    const bb=Number(r.bultos)||0; b+=bb;
+    (porDia[fecha]=porDia[fecha]||{b:0,e:0}).b+=bb;
+    cqLista(r.prep).forEach(p=>{ const k=cqNorm(p.n); (prep[k]=prep[k]||{n:p.n,b:0,e:0,v:0}).b+=Number(p.b)||0; });
+    cqLista(r.arts).forEach(a=>{ const k=emp+'|'+cqCod(a.c); (arts[k]=arts[k]||{emp,c:a.c,d:a.d||'',b:0,e:0,v:0}).b+=Number(a.b)||0; });
+  });
+  const sinInf=new Set(), sinCruce={}, jornadas=new Set(reps.map(x=>x.fecha));
+  let difs=0;
+  allRecs.forEach(r=>{
+    if(!r||!en(r.fecha)) return;
+    const mias=cqLista(r.diferencias).filter(d=>emps.includes(d.emp));
+    // jornada "trabajada" para esta cuenta: hubo informe, diferencias o bultos de la cuenta
+    if(mias.length || emps.some(k=>(Number(r[k+'_bultos'])||0)+(Number(r[k+'_pi'])||0)+(Number(r[k+'_sa'])||0)>0)) jornadas.add(r.fecha);
+    mias.forEach(d=>{
+      difs++;
+      const c=Math.abs(Number(d.cant)||0), so=Number(d.cant)>0;
+      if(!con.has(r.fecha+'|'+d.emp)){ sinInf.add(r.fecha); return; }
+      e+=c; if(so) s+=c; else f+=c;
+      porDia[r.fecha].e+=c;
+      const pk=cqNorm(d.prep);
+      if(prep[pk]){ prep[pk].e+=c; prep[pk].v++; } else { (sinCruce[pk]=sinCruce[pk]||{n:d.prep,e:0}).e+=c; }
+      const ak=d.emp+'|'+cqCod(d.cod);
+      const a=arts[ak]||(arts[ak]={emp:d.emp,c:d.cod,d:d.desc||'',b:0,e:0,v:0});
+      a.e+=c; a.v++; if(!a.d) a.d=d.desc||'';
+    });
+  });
+  const tasa=o=>o.b?o.e/o.b:-1;
+  return {b,e,s,f,reps,porDia,jornadas,difs,
+    diasInf:new Set(reps.map(x=>x.fecha)),
+    prep:Object.values(prep).sort((x,y)=>(tasa(y)-tasa(x))||(y.b-x.b)),
+    arts:Object.values(arts).filter(a=>a.e>0).sort((x,y)=>{ if(!!x.b!==!!y.b) return x.b?-1:1; return (tasa(y)-tasa(x))||(y.e-x.e); }),
+    sinInf:[...sinInf].sort((x,y)=>parseFecha(x)-parseFecha(y)), sinCruce:Object.values(sinCruce)};
+}
+let cqTab=null, cqDonut=null;
+function toggleCq(){
+  const body=document.getElementById('cq-body'), arrow=document.getElementById('cq-arrow');
+  const open=body.style.display==='none';
+  body.style.display=open?'block':'none';
+  arrow.classList.toggle('open',open);
+  if(open) renderCalidad(); // los gráficos se dibujan con la tarjeta visible
+}
+function cqSelTab(k){ cqTab=k; renderCalidad(); }
+function cqCentro(total){
+  return {id:'cqCentro',afterDraw(chart){
+    const {ctx,chartArea:{left,right,top,bottom}}=chart, cx=(left+right)/2, cy=(top+bottom)/2;
+    ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='#0f2419'; ctx.font='800 26px "Plus Jakarta Sans",sans-serif'; ctx.fillText(total.toLocaleString('es-AR'),cx,cy-7);
+    ctx.fillStyle='#4a7059'; ctx.font='700 10px "Plus Jakarta Sans",sans-serif'; ctx.fillText('BULTOS CON ERROR',cx,cy+13);
+    ctx.restore();
+  }};
+}
+function cqDelta(C,P,R){
+  if(P && P.b){
+    const dpp=Math.round((C.e/C.b-P.e/P.b)*10000)/100;
+    const cls=dpp<0?'up':dpp>0?'down':'eq', fl=dpp<0?'▼ ':dpp>0?'▲ ':'';
+    return `<span class="kpi-delta ${cls}">${fl}${Math.abs(dpp).toFixed(2).replace('.',',')} pp</span>`;
+  }
+  return `<span class="kpi-delta none">${R.prev?'sin informe previo':'—'}</span>`;
+}
+function renderCalidad(){
+  const body=document.getElementById('cq-body'); if(!body) return;
+  const R=cqRangos();
+  const comps=compFilter?companyList().filter(c=>c.key===compFilter):companyList();
+  const T=cqCalcular(R.cur,comps.map(c=>c.key)), TP=R.prev?cqCalcular(R.prev,comps.map(c=>c.key)):null;
+  const base=R.cur?(R.cur[0].getTime()===R.cur[1].getTime()?`Jornada ${fmtDate(R.cur[0])}`:`Jornadas ${fmtShort(R.cur[0])} → ${fmtShort(R.cur[1])}`):'Todo el historial';
+  document.getElementById('cq-sub').textContent=`${compFilter?compName(compFilter):'Por cuenta'} · ${base} · bultos con diferencia ÷ bultos pickeados (VKM)${ctrlFilter?' · el filtro de controlador no se aplica acá':''}`;
+  document.getElementById('cq-lead').innerHTML=T.reps.length?`Error <b>${cqPct(T.e,T.b)}</b> · ${cqN(T.e)} bultos con diferencia`:'Sin informes de VKM';
+  if(body.style.display==='none') return; // cerrada: solo la línea de resumen
+  if(cqChart){ cqChart.destroy(); cqChart=null; }
+  if(cqDonut){ cqDonut.destroy(); cqDonut=null; }
+  if(!T.reps.length){
+    body.innerHTML=`<div class="chart-empty" style="height:110px">Sin informes de VKM en este período. Se cargan desde la app: Panel supervisor → Calidad → Cargar informe VKM.</div>`;
+    return;
+  }
+  // Cálculo por cuenta: solo las que tienen informe o diferencias en el período
+  const porCuenta=comps.map(c=>({c,C:cqCalcular(R.cur,[c.key]),P:R.prev?cqCalcular(R.prev,[c.key]):null})).filter(x=>x.C.reps.length||x.C.difs);
+  if(!cqTab || !porCuenta.find(x=>x.c.key===cqTab)){
+    const conInf=porCuenta.filter(x=>x.C.reps.length);
+    cqTab=(conInf.sort((a,b)=>(b.C.b?b.C.e/b.C.b:0)-(a.C.b?a.C.e/a.C.b:0))[0]||porCuenta[0]).c.key; // arranca en la de peor %
+  }
+  // ── Resumen por cuenta: torta + tabla
+  const filas=porCuenta.map(({c,C,P})=>`<tr class="cu${c.key===cqTab?' sel':''}" onclick="cqSelTab('${c.key}')">
+      <td class="nm"><i style="background:${c.color||'#166534'}"></i>${cqEsc(c.name)}</td>
+      <td class="p">${C.reps.length?cqPct(C.e,C.b):'—'}</td><td>${C.reps.length?cqDelta(C,P,R):''}</td>
+      <td>${cqN(C.e)}</td><td class="s">${cqN(C.s)}</td><td class="f">${cqN(C.f)}</td><td>${C.reps.length?cqN(C.b):'—'}</td>
+      <td>${C.diasInf.size} de ${C.jornadas.size}</td></tr>`).join('');
+  const tot=porCuenta.length>1?`<tr class="tot"><td>Total</td><td class="p">${cqPct(T.e,T.b)}</td><td>${cqDelta(T,TP,R)}</td>
+      <td>${cqN(T.e)}</td><td class="s">${cqN(T.s)}</td><td class="f">${cqN(T.f)}</td><td>${cqN(T.b)}</td><td></td></tr>`:'';
+  const conDona=porCuenta.filter(x=>x.C.e>0);
+  const dona=T.e>0?`<div class="donut-wrap"><canvas id="cq-donut"></canvas></div><div class="donut-legend">${conDona.map(({c,C})=>
+      `<div class="dl-item"><span class="dl-dot" style="background:${c.color||'#166534'}"></span><span class="dl-name">${cqEsc(c.name)}</span>
+       <span class="dl-val num">${cqN(C.e)} · ${Math.round(C.e/T.e*100)}%</span></div>`).join('')}</div>`
+    :'<div class="chart-empty" style="height:190px">Sin diferencias anotadas en este período</div>';
+  // ── Detalle de la cuenta elegida
+  const sel=porCuenta.find(x=>x.c.key===cqTab), C=sel.C, cn=sel.c;
+  const tabs=porCuenta.map(({c,C})=>`<button class="metric-tab${c.key===cqTab?' on':''}" onclick="cqSelTab('${c.key}')">${cqEsc(c.name)}<span class="tp">${C.reps.length?cqPct(C.e,C.b):'sin informe'}</span></button>`).join('');
+  let det;
+  if(!C.reps.length){
+    det=`<div class="chart-empty" style="height:110px">${cqEsc(cn.name)} tiene diferencias anotadas pero ningún informe de VKM en este período, así que no se puede calcular el %.</div>`;
+  } else {
+    const conErr=C.prep.filter(p=>p.e>0), sinErr=C.prep.filter(p=>!p.e);
+    const maxP=Math.max(...conErr.map(p=>p.e/p.b),0)||1;
+    const prepH=conErr.map((p,i)=>`<div class="cq-pr"><div class="rk-pos">${i+1}</div>
+      <div class="info"><div class="n">${cqEsc(p.n)}</div><div class="sb">${cqN(p.e)} con error de ${cqN(p.b)} pickeados · ${p.v} ${p.v===1?'vez':'veces'}</div>
+      <div class="tr"><div class="fl" style="width:${Math.round(p.e/p.b/maxP*100)}%"></div></div></div>
+      <div class="p">${cqPct(p.e,p.b)}</div></div>`).join('')||'<div class="cq-ok">Ningún preparador con diferencias en esta cuenta.</div>';
+    const okH=sinErr.length?`<div class="cq-ok"><b>Sin errores:</b> ${sinErr.map(p=>cqEsc(p.n)).join(', ')}</div>`:'';
+    const crH=C.sinCruce.length?`<div class="cq-warn">⚠ ${C.sinCruce.map(x=>`${cqEsc(x.n)} (${cqN(x.e)} bultos)`).join(', ')}: no figura${C.sinCruce.length>1?'n':''} en VKM. Revisar el nombre en Preparadores de la app.</div>`:'';
+    const MAXA=10, verA=C.arts.slice(0,MAXA);
+    const artH=C.arts.length?`<div class="cq-tw"><table class="cq-t"><tr><th>Código</th><th>Descripción</th><th class="r">Pickeado</th><th class="r">Error</th><th class="r">Veces</th><th class="r">%</th></tr>
+      ${verA.map(a=>`<tr><td class="c">${cqEsc(a.c)||'—'}</td><td class="d" title="${cqEsc(a.d)}">${cqEsc(a.d)}</td>
+        <td class="r">${a.b?cqN(a.b):'—'}</td><td class="r">${cqN(a.e)}</td><td class="r">${a.v}</td><td class="r p">${cqPct(a.e,a.b)}</td></tr>`).join('')}</table></div>`
+      :'<div class="chart-empty" style="height:80px">Sin diferencias anotadas en esta cuenta</div>';
+    det=`<div class="cq-box" style="margin-top:12px"><div class="chart-title" style="font-size:12px">% de error por jornada · ${cqEsc(cn.name)}</div>
+        <div class="chart-sub">La línea punteada es el % del período. Las jornadas sin informe de VKM quedan vacías.</div>
+        <div class="canvas-wrap" style="height:180px"><canvas id="cq-line"></canvas></div></div>
+      <div class="cq-grid">
+        <div class="cq-box"><div class="chart-title" style="font-size:12px">Preparadores con errores · ${cqEsc(cn.name)}</div><div class="chart-sub">De mayor a menor % de error</div>${prepH}${okH}${crH}</div>
+        <div class="cq-box"><div class="chart-title" style="font-size:12px">Artículos con más errores · ${cqEsc(cn.name)}</div>
+          <div class="chart-sub">${C.arts.length} ${C.arts.length===1?'artículo':'artículos'} con diferencias${C.arts.length>MAXA?` · se muestran ${MAXA}`:''}</div>${artH}</div>
+      </div>`;
+  }
+  const jH=C.sinInf.length?`<div class="cq-warn">⚠ ${cqEsc(cn.name)}: hay diferencias de ${C.sinInf.length===1?'una jornada':'jornadas'} sin informe de VKM (${C.sinInf.join(', ')}). No entran en el %.</div>`:'';
+  body.innerHTML=`<div class="cq-top">
+      <div class="cq-box"><div class="chart-title" style="font-size:12px">Bultos con error por cuenta</div><div class="chart-sub">Qué parte del error total es de cada cuenta</div>${dona}</div>
+      <div class="cq-box"><div class="chart-title" style="font-size:12px">Resumen por cuenta</div><div class="chart-sub">Tocá una cuenta para ver su detalle abajo</div>
+        <div class="cq-tw"><table class="cq-sum"><tr><th>Cuenta</th><th>% error</th><th>vs. anterior</th><th>Con error</th><th>Sobra</th><th>Falta</th><th>Pickeados</th><th>Jornadas c/ informe</th></tr>${filas}${tot}</table></div></div>
+    </div>
+    <div class="cq-det"><div class="cq-det-h"><div class="cq-det-t">Detalle de <b>${cqEsc(cn.name)}</b></div><div class="metric-tabs">${tabs}</div></div>${det}${jH}</div>`;
+  if(typeof Chart==='undefined') return;
+  if(T.e>0){
+    cqDonut=new Chart(document.getElementById('cq-donut'),{type:'doughnut',
+      data:{labels:conDona.map(x=>x.c.name),datasets:[{data:conDona.map(x=>x.C.e),backgroundColor:conDona.map(x=>x.c.color||'#166534'),borderWidth:2,borderColor:'#fff',hoverOffset:5}]},
+      options:{cutout:'68%',responsive:true,maintainAspectRatio:false,animation:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{ const x=conDona[c.dataIndex]; return ` ${x.c.name}: ${cqN(x.C.e)} bultos con error · ${cqPct(x.C.e,x.C.b)} de error`; }}}}},
+      plugins:[cqCentro(T.e)]});
+  }
+  if(!C.reps.length) return;
+  let dias=[];
+  if(R.cur){ for(let d=new Date(R.cur[0]); d<=R.cur[1]; d=cqAdd(d,1)) dias.push(fmtDate(d)); }
+  else dias=[...C.diasInf].sort((x,y)=>parseFecha(x)-parseFecha(y));
+  if(dias.length>60) dias=dias.slice(-60);
+  const vals=dias.map(f=>{ const x=C.porDia[f]; return x&&x.b?Math.round(x.e/x.b*10000)/100:null; });
+  const media=C.b?C.e/C.b*100:null;
+  cqChart=new Chart(document.getElementById('cq-line'),{type:'bar',
+    data:{labels:dias.map(f=>f.slice(0,5)),datasets:[
+      {type:'bar',data:vals,backgroundColor:cn.color||'#166534',borderRadius:5,maxBarThickness:34},
+      {type:'line',data:dias.map(()=>media),borderColor:'#0f2419',borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{
+        if(ctx.datasetIndex===1) return `% del período: ${cqPct(C.e,C.b)}`;
+        const x=C.porDia[dias[ctx.dataIndex]]; return x?`${cqPct(x.e,x.b)} · ${cqN(x.e)} de ${cqN(x.b)} bultos`:'Sin informe';
+      }}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8aac95',font:{family:'Plus Jakarta Sans',weight:'600',size:10}}},
+        y:{beginAtZero:true,grid:{color:'#eef3ef'},ticks:{color:'#8aac95',font:{family:'Plus Jakarta Sans',weight:'600',size:10},callback:v=>String(v).replace('.',',')+' %'}}}}});
 }
 
 /* ══════════ CONEXIÓN ══════════ */
@@ -1130,11 +1407,13 @@ function hideLoading(){
 }
 
 function start(){
+  document.getElementById('vertag').textContent=VER;
   renderProw(); setSync(navigator.onLine);
   updateDateControls(); updateDayNav();
   if(window.DB_READY){
     window.DB.onRecs(recs=>{ allRecs=recs; recsReady=true; hideLoading(); populateFilters(); render(); });
     window.DB.onCompanies(c=>{ companies=c; populateFilters(); if(recsReady) render(); });
+    if(window.DB.onVkm) window.DB.onVkm(v=>{ vkmData=v||{}; if(recsReady) render(); });
   } else {
     setTimeout(()=>{ hideLoading(); render(); },4000);
   }

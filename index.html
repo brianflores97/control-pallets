@@ -84,6 +84,13 @@ window.FB = {
   onArticulos(callback){
     return onValue(ref(db, 'config/articulos'), snap => callback(snap.exists() ? snap.val() : {}));
   },
+  // Informes VKM resumidos: config/vkm/{AAAA-MM-DD}/{cuenta}
+  async saveVkm(dia, emp, data){
+    await set(ref(db, `config/vkm/${dia}/${emp}`), data);
+  },
+  onVkm(callback){
+    return onValue(ref(db, 'config/vkm'), snap => callback(snap.exists() ? snap.val() : {}));
+  },
   // Preparadores en tiempo real (para el teléfono del controlador)
   onPreparers(callback){
     return onValue(ref(db, 'config/preparers'), snap => callback(snap.exists() ? snap.val() : []));
@@ -594,6 +601,46 @@ tr.drow td{background:var(--sf2);padding:8px 14px 10px!important}
 .ac-row .c{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--tx);flex:0 0 auto;min-width:40px}
 .ac-row .d{color:var(--tx2)}
 .bp:disabled{opacity:.4;cursor:default}
+/* Calidad de preparación (supervisor) */
+.cq{display:flex;flex-direction:column;gap:12px}
+.cq-box{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:14px 16px}
+.cq-vkm{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.cq-chips{display:flex;gap:6px;flex-wrap:wrap}
+.cq-chip{display:flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--bd);border-radius:6px;font-size:12px;
+  font-weight:600;color:var(--tx3);background:var(--sf2);cursor:pointer;font-family:inherit}
+.cq-chip i{width:7px;height:7px;border-radius:50%}
+.cq-chip.on{color:var(--tx);border-color:var(--c)}
+.cq-chip .s{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;color:var(--tx3)}
+.cq-meta{font-size:12px;color:var(--tx2);flex:1;min-width:220px;line-height:1.5}
+.cq-meta b{font-family:'JetBrains Mono',monospace;color:var(--tx);font-weight:700}
+.cq-acts{display:flex;gap:8px;flex-wrap:wrap}
+.cq-btn{padding:8px 14px;border:1px solid var(--bd);border-radius:6px;background:var(--sf2);color:var(--tx2);font-size:12px;
+  font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap}
+.cq-btn.xl{background:transparent;border-color:var(--grn);color:var(--grn)}
+.cq-big{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.cq-big .n{font-family:'JetBrains Mono',monospace;font-size:40px;font-weight:700;color:var(--tx);line-height:1}
+.cq-big .l{font-size:13px;color:var(--tx);font-weight:600}
+.cq-big .s{font-size:12px;color:var(--tx3);margin-top:4px}
+.cq-big .s b{font-family:'JetBrains Mono',monospace;font-weight:700}
+.cq-grid{display:grid;grid-template-columns:1fr 1.45fr;gap:12px}
+@media(max-width:860px){.cq-grid{grid-template-columns:1fr}}
+.cq-tw{overflow-x:auto}
+.cq-t{width:100%;border-collapse:collapse;font-size:12px}
+.cq-t th{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--tx3);font-weight:600;text-align:left;
+  padding:0 6px 8px;border-bottom:1px solid var(--bd);white-space:nowrap;background:none;position:static}
+.cq-t td{font-family:'Inter',system-ui,sans-serif;padding:7px 6px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--tx2)}
+.cq-t .r{text-align:right}
+.cq-t td.m{font-family:'JetBrains Mono',monospace}
+.cq-t td.p{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--tx);font-size:13.5px;white-space:nowrap}
+.cq-t .z{color:var(--tx3)}
+.cq-t .nm{color:var(--tx);font-weight:600}
+.cq-t .ds{max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cq-warn{margin-top:10px;font-size:11.5px;color:var(--tx2);border-top:1px solid var(--bd);padding-top:9px;line-height:1.5}
+.cq-warn b{color:var(--tx)}
+.cq-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+.cq-h .sh{margin:0}
+.cq-h .x{font-size:10.5px;color:var(--tx3)}
+.cq-empty{font-size:12.5px;color:var(--tx2);line-height:1.6}
 .vertag{text-align:center;font-size:9.5px;color:var(--tx3);
   font-family:'JetBrains Mono',monospace;margin:18px 0 4px;letter-spacing:.3px}
 
@@ -1376,7 +1423,6 @@ tr.drow td{background:var(--sf2);padding:8px 14px 10px!important}
       <button class="bex" style="background:var(--sf2);border-color:var(--bd);color:var(--tx2)" onclick="openCompConfig()">⚙️ Empresas</button>
       <button class="bex" style="background:var(--sf2);border-color:var(--bd);color:var(--tx2)" onclick="openPrepMgmt()">👷 Preparadores</button>
       <button class="bex" style="background:var(--sf2);border-color:var(--bd);color:var(--tx2)" onclick="openArtMgmt()">📦 Artículos</button>
-      <button class="bex" style="background:transparent;border-color:var(--grn);color:var(--grn)" onclick="exportExcelDif()">⬇ Excel diferencias</button>
       <button class="bex primary" onclick="exportExcel()">⬇ Excel</button>
     </div>
   </div>
@@ -1505,6 +1551,7 @@ tr.drow td{background:var(--sf2);padding:8px 14px 10px!important}
     <button class="stab" id="stab-ctrl" onclick="setSupTab('ctrl')">👷 Controladores</button>
     <button class="stab" id="stab-rank" onclick="setSupTab('rank')">🏆 Ranking</button>
     <button class="stab" id="stab-live" onclick="setSupTab('live')">⚡ En vivo</button>
+    <button class="stab" id="stab-cal" onclick="setSupTab('cal')">📐 Calidad</button>
   </div>
 
   <!-- TAB: Registros -->
@@ -1532,6 +1579,12 @@ tr.drow td{background:var(--sf2);padding:8px 14px 10px!important}
   <!-- TAB: En vivo -->
   <div id="tab-live-view" style="display:none">
     <div id="live-content"></div>
+  </div>
+
+  <!-- TAB: Calidad de preparación -->
+  <div id="tab-cal-view" style="display:none">
+    <input type="file" id="vkm-file" accept=".csv,text/csv" style="display:none" onchange="vkmArchivoElegido(this)">
+    <div id="cal-content"></div>
   </div>
 </div>
 </div>
@@ -1640,7 +1693,7 @@ tr.drow td{background:var(--sf2);padding:8px 14px 10px!important}
 const STOR_KEY  = 'pallets_v3';
 /* Versión visible abajo del tablero: si no coincide con la última que subiste,
    el navegador se quedó con la copia vieja en caché. */
-const VER = 'v3 · lista de artículos completa';
+const VER = 'v6 · un solo Excel de calidad';
 const POLL_MS   = 10000;
 const AV_COLORS = ['#4d8bff','#c084fc','#2dd4bf','#fb923c','#f472b6','#a3e635','#fbbf24','#e879f9'];
 const DRAFT_KEY  = ()=>`pallets_draft_${me||'_'}`;
@@ -2522,13 +2575,14 @@ function renderExecSummary(filteredRecs, allRecs){
 
 /* ══════════════ SUPERVISOR ══════════════════════════════ */
 const PERIODS=[{k:'hoy',l:'Hoy'},{k:'semana',l:'Semana'},{k:'mes',l:'Mes'},{k:'todo',l:'Todo'}];
-const SUP_TABS=['reg','ctrl','rank','live'];
+const SUP_TABS=['reg','ctrl','rank','live','cal'];
 
 function initSup(){
   renderProw();
   rdcInit();
   initPreparers();
   initArticulos();
+  initVkm();
   initCtrlMgmt();
   const recs=loadRecs();
   lastHash=simpleHash(recs);
@@ -2564,6 +2618,7 @@ function setSupTab(t){
   document.getElementById('tab-ctrl-view').style.display=t==='ctrl'?'block':'none';
   document.getElementById('tab-rank-view').style.display=t==='rank'?'block':'none';
   document.getElementById('tab-live-view').style.display=t==='live'?'block':'none';
+  document.getElementById('tab-cal-view').style.display=t==='cal'?'block':'none';
   // Buscador de texto solo visible en tab Registros
   document.getElementById('search-row').style.display=t==='reg'?'flex':'none';
   if(t!=='live') stopLiveTimer();
@@ -2585,6 +2640,7 @@ function refreshSup(recs){
   else if(supTab==='ctrl') renderCtrlGrid(recs, fil);
   else if(supTab==='rank') renderRanking(fil);
   else if(supTab==='live') renderLiveView(recs);
+  else if(supTab==='cal') renderCalidad(fil);
 }
 
 /* -- Filtro por ID Ruta -- */
@@ -3180,37 +3236,6 @@ function toggleSupDif(id){
   renderTable(_supTableRows);
 }
 
-/* -- Excel diferencias: solo las rutas con diferencias, una fila por artículo -- */
-function exportExcelDif(){
-  if(typeof XLSX === 'undefined'){
-    const s=document.createElement('script');
-    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    s.onload=()=>{ toast('Listo, generando Excel...','in'); setTimeout(doExportDif,100); };
-    s.onerror=()=>toast('Error al cargar librería Excel','er');
-    document.head.appendChild(s);
-    toast('Cargando Excel...','in');
-    return;
-  }
-  doExportDif();
-}
-function difFilasExcel(rows){
-  return rows.filter(r=>(r.diferencias||[]).length).flatMap(r=>r.diferencias.map(d=>{
-    const cod=/^\d+$/.test(String(d.cod))?Number(d.cod):(d.cod||'');
-    return [r.fecha, r.id_ruta, r.ctrl, getEmpName(d.emp), d.prep, cod, d.desc, d.cant>0?'Sobra':'Falta', Number(d.cant)||0];
-  }));
-}
-function doExportDif(){
-  const data=difFilasExcel(exportRows());
-  if(!data.length){ toast('No hubo diferencias en este período','in'); return; }
-  const header=['Fecha','ID Ruta','Controlador','Cuenta','Preparador','Código','Descripción','Tipo','Bultos'];
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.aoa_to_sheet([header,...data]);
-  ws['!cols']=[12,10,18,12,20,10,40,8,8].map(w=>({wch:w}));
-  XLSX.utils.book_append_sheet(wb,ws,'Diferencias');
-  XLSX.writeFile(wb,`Diferencias_${exportLabel()}.xlsx`);
-  toast('Excel de diferencias exportado ✓','ok');
-}
-
 /* -- Datos que el controlador necesita en su teléfono -- */
 let _artSub=false, _prepSub=false;
 function initArticulos(){
@@ -3348,6 +3373,480 @@ function artRenderLista(){
   list.innerHTML=fil.slice(0,MAX).map(x=>`<div class="ac-row"><span class="c">${crkEsc(x.c)}</span><span class="d">${crkEsc(x.d)}</span></div>`).join('')+
     (fil.length>MAX?`<div class="ac-row" style="border:none"><span class="d" style="color:var(--tx3)">y ${fil.length-MAX} más — usá el buscador</span></div>`:'')+
     (!fil.length?`<div class="ac-row" style="border:none"><span class="d" style="color:var(--tx3)">Sin resultados</span></div>`:'');
+}
+
+/* ══════════════ CALIDAD DE PREPARACIÓN (informe VKM) ══════════
+   Del CSV de movimientos de VKM se usan solo las filas PI (picking).
+   Se guarda un resumen por jornada y cuenta en config/vkm/{AAAA-MM-DD}/{cuenta}:
+   {fecha, desde, hasta, lineas, bultos, prep:[{n,b,l}], arts:[{c,d,b,l}], archivo, cargado}
+   % de error = bultos con diferencia (controladores) ÷ bultos pickeados (VKM) */
+const VKM_KEY='pallets_vkm';
+let calEmp=null, _calFil=[], _vkmSub=false;
+function loadVkm(){ try{ const o=JSON.parse(localStorage.getItem(VKM_KEY)||'{}'); return (o&&typeof o==='object')?o:{}; }catch(e){ return {}; } }
+function vkmDiaKey(fecha){ const [d,m,a]=String(fecha).split('/'); return `${a}-${m}-${d}`; }
+function vkmFechaDeKey(k){ const [a,m,d]=String(k).split('-'); return `${d}/${m}/${a}`; }
+function vkmLista(v){ return v ? (Array.isArray(v)?v:Object.values(v)).filter(Boolean) : []; }
+function nomNorm(t){ return artNorm(t).toUpperCase().replace(/\s+/g,' ').trim(); }
+function codNorm(c){ return String(c==null?'':c).trim().toUpperCase().replace(/^0+(?=\d)/,''); }
+function artFix(d){ return String(d||'').replace(/JAM\?/g,'JAMÓN').replace(/CL\?ICO/g,'CLÁSICO'); }
+function nAR(n){ return Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:2}); }
+function pctTxt(e,b){ return b ? (e/b*100).toFixed(2).replace('.',',')+' %' : '—'; }
+
+function initVkm(){
+  if(_vkmSub || !window.FB_READY || !window.FB || !window.FB.onVkm) return;
+  _vkmSub=true;
+  try{
+    window.FB.onVkm(data=>{
+      try{ localStorage.setItem(VKM_KEY, JSON.stringify(data||{})); }catch(e){}
+      if(role==='supervisor' && supTab==='cal') renderCalidad(_calFil);
+    });
+  }catch(e){ _vkmSub=false; }
+}
+
+// ¿Esta jornada (DD/MM/AAAA) entra en el período elegido en el panel?
+function calFechasPeriodo(fil){
+  if(routeFilter){ const set=new Set(fil.map(r=>r.fecha)); return f=>set.has(f); }
+  if(specificDate) return f=>f===specificDate;
+  if(supPeriod==='hoy'){ const t=jornadaStr(); return f=>f===t; }
+  if(supPeriod==='todo') return ()=>true;
+  // Semana = jornada actual + 6 anteriores; Mes = jornada actual + 29 anteriores (por jornada, no por hora de guardado)
+  const [jd,jm,ja]=jornadaStr().split('/').map(Number);
+  const hasta=new Date(ja,jm-1,jd).getTime();
+  const lim=new Date(ja,jm-1,jd); lim.setDate(lim.getDate()-(supPeriod==='semana'?6:29));
+  return f=>{ const [d,m,a]=String(f).split('/').map(Number); const t=new Date(a,m-1,d).getTime(); return t>=lim.getTime() && t<=hasta; };
+}
+
+function calCalcular(emp, filPanel){
+  const enPer=calFechasPeriodo(filPanel), vk=loadVkm();
+  // Las diferencias se toman por jornada (r.fecha), igual que los informes de VKM
+  const fil=routeFilter ? filPanel : loadRecs().filter(r=>enPer(r.fecha));
+  const reps=[];
+  Object.keys(vk).sort().forEach(k=>{
+    const r=vk[k]&&vk[k][emp];
+    if(r && enPer(vkmFechaDeKey(k))) reps.push({...r, fecha:vkmFechaDeKey(k)});
+  });
+  const conInforme=new Set(reps.map(r=>r.fecha));
+  const prep={}, arts={};
+  let lineas=0, bultos=0;
+  reps.forEach(r=>{
+    lineas+=Number(r.lineas)||0; bultos+=Number(r.bultos)||0;
+    vkmLista(r.prep).forEach(p=>{
+      const k=nomNorm(p.n); const o=prep[k]||(prep[k]={n:p.n,b:0,e:0,s:0,f:0,v:0}); o.b+=Number(p.b)||0;
+    });
+    vkmLista(r.arts).forEach(a=>{
+      const k=codNorm(a.c); const o=arts[k]||(arts[k]={c:a.c,d:a.d||'',b:0,e:0,s:0,f:0,v:0}); o.b+=Number(a.b)||0;
+    });
+  });
+  let e=0,s=0,f=0;
+  const sinCruce={}, sinInforme=new Set(), det=[];
+  fil.forEach(r=>(r.diferencias||[]).forEach(d=>{
+    if(d.emp!==emp) return;
+    const c=Math.abs(Number(d.cant)||0), sobra=Number(d.cant)>0;
+    if(!conInforme.has(r.fecha)){ sinInforme.add(r.fecha); det.push({r,d,obs:'Jornada sin informe VKM'}); return; }
+    e+=c; if(sobra) s+=c; else f+=c;
+    let obs='';
+    const pk=nomNorm(d.prep);
+    if(prep[pk]){ const o=prep[pk]; o.e+=c; o.v++; if(sobra) o.s+=c; else o.f+=c; }
+    else { const o=sinCruce[pk]||(sinCruce[pk]={n:d.prep,e:0,s:0,f:0,v:0}); o.e+=c; o.v++; if(sobra) o.s+=c; else o.f+=c; obs='Preparador no figura en VKM'; }
+    const ak=codNorm(d.cod);
+    const a=arts[ak]||(arts[ak]={c:d.cod,d:d.desc||'',b:0,e:0,s:0,f:0,v:0});
+    a.e+=c; a.v++; if(sobra) a.s+=c; else a.f+=c; if(!a.d) a.d=d.desc||'';
+    det.push({r,d,obs});
+  }));
+  const tasa=o=>o.b?o.e/o.b:-1;
+  const prepL=Object.values(prep).sort((x,y)=>(tasa(y)-tasa(x))||(y.b-x.b));
+  const artL=Object.values(arts).filter(a=>a.e>0).sort((x,y)=>{
+    if(!!x.b!==!!y.b) return x.b?-1:1;
+    return (tasa(y)-tasa(x))||(y.e-x.e);
+  });
+  const desde=reps.map(r=>r.desde).filter(Boolean).sort()[0]||'';
+  const hasta=reps.map(r=>r.hasta).filter(Boolean).sort().slice(-1)[0]||'';
+  return {reps,lineas,bultos,e,s,f,prep:prepL,arts:artL,sinCruce:Object.values(sinCruce),
+    sinInforme:[...sinInforme].sort((a,b)=>vkmDiaKey(a).localeCompare(vkmDiaKey(b))),det,desde,hasta};
+}
+
+function renderCalidad(fil){
+  _calFil=fil||[];
+  const el=document.getElementById('cal-content'); if(!el) return;
+  const comps=activeComps();
+  if(!calEmp || !comps.find(c=>c.key===calEmp)) calEmp=comps[0]?comps[0].key:null;
+  if(!calEmp){ el.innerHTML='<div class="cq-box cq-empty">No hay empresas activas.</div>'; return; }
+  const enPer=calFechasPeriodo(_calFil), vk=loadVkm();
+  const tiene=k=>Object.keys(vk).some(d=>vk[d]&&vk[d][k]&&enPer(vkmFechaDeKey(d)));
+  const R=calCalcular(calEmp,_calFil), nm=crkEsc(getEmpName(calEmp));
+  const chips=comps.map(c=>`<button type="button" class="cq-chip${c.key===calEmp?' on':''}" style="--c:${c.color}" onclick="calSelEmp('${c.key}')">`+
+    `<i style="background:${c.color}"></i>${crkEsc(c.name)}<span class="s">${tiene(c.key)?'✓':'—'}</span></button>`).join('');
+  const nPrep=R.prep.length;
+  let meta;
+  if(!R.reps.length) meta=`Sin informe de VKM de ${nm} en este período.`;
+  else if(R.reps.length===1) meta=`Informe VKM · jornada ${R.reps[0].fecha} · picking de <b>${R.desde}</b> a <b>${R.hasta}</b> · <b>${nAR(R.lineas)}</b> líneas · <b>${nAR(R.bultos)}</b> bultos · <b>${nPrep}</b> preparadores`;
+  else meta=`<b>${R.reps.length}</b> informes VKM · del ${R.reps[0].fecha} al ${R.reps[R.reps.length-1].fecha} · <b>${nAR(R.lineas)}</b> líneas · <b>${nAR(R.bultos)}</b> bultos · <b>${nPrep}</b> preparadores`;
+  let h=`<div class="cq"><div class="cq-box cq-vkm"><div class="cq-chips">${chips}</div><div class="cq-meta">${meta}</div>
+    <div class="cq-acts"><button type="button" class="cq-btn" onclick="vkmElegir()">⬆ Cargar informe VKM</button>
+    <button type="button" class="cq-btn xl" onclick="exportExcelCal()">⬇ Excel calidad</button></div></div>`;
+  if(!R.reps.length){
+    h+=`<div class="cq-box cq-empty">Para ver el % de error de ${nm}, cargá el informe de movimientos de VKM de la jornada (CSV).
+      La app toma solo las filas de picking (PI) y las cruza con las diferencias que anotan los controladores.
+      ${R.sinInforme.length?`<br>Hay diferencias anotadas en: ${R.sinInforme.join(', ')}.`:''}</div></div>`;
+    el.innerHTML=h; return;
+  }
+  const avisoJ=R.sinInforme.length?`<div class="cq-warn">Hay diferencias de ${R.sinInforme.length===1?'una jornada':'jornadas'} sin informe VKM (${R.sinInforme.join(', ')}): no entran en el %.</div>`:'';
+  h+=`<div class="cq-box"><div class="cq-big"><span class="n">${pctTxt(R.e,R.bultos)}</span><div><div class="l">Error de preparación · ${nm}</div>
+    <div class="s"><b>${nAR(R.e)}</b> bultos con diferencia de <b>${nAR(R.bultos)}</b> pickeados · sobra <b style="color:var(--grn)">${nAR(R.s)}</b> · falta <b style="color:var(--red)">${nAR(R.f)}</b></div></div></div>${avisoJ}</div>`;
+  const prows=R.prep.map(p=>`<tr><td class="nm">${crkEsc(p.n)}</td><td class="r m">${nAR(p.b)}</td>`+
+    `<td class="r m${p.e?'':' z'}">${nAR(p.e)}</td><td class="r ${p.e?'p':'m z'}">${pctTxt(p.e,p.b)}</td></tr>`).join('');
+  const avisoP=R.sinCruce.length?`<div class="cq-warn">⚠ ${R.sinCruce.map(x=>`<b>${crkEsc(x.n)}</b> (${nAR(x.e)} bultos)`).join(', ')}
+    ${R.sinCruce.length===1?'tiene diferencias pero no figura':'tienen diferencias pero no figuran'} en el informe. Revisá que en Preparadores se llame igual que su usuario de VKM.</div>`:'';
+  const MAXA=8, verA=R.arts.slice(0,MAXA);
+  const arows=verA.map(a=>`<tr><td class="m nm">${crkEsc(a.c)||'—'}</td><td class="ds" title="${crkEsc(a.d)}">${crkEsc(a.d)}</td>`+
+    `<td class="r m">${a.b?nAR(a.b):'—'}</td><td class="r m">${nAR(a.e)}</td><td class="r m">${a.v}</td><td class="r p">${pctTxt(a.e,a.b)}</td></tr>`).join('');
+  h+=`<div class="cq-grid">
+    <div class="cq-box"><div class="cq-h"><span class="sh">Por preparador</span><span class="x">ordenado por % de error</span></div>
+      <div class="cq-tw"><table class="cq-t"><tr><th>Preparador</th><th class="r">Pickeó</th><th class="r">Con error</th><th class="r">% error</th></tr>${prows}</table></div>${avisoP}</div>
+    <div class="cq-box"><div class="cq-h"><span class="sh">Artículos con más errores</span>
+      <span class="x">${R.arts.length?`${R.arts.length} ${R.arts.length===1?'artículo':'artículos'} con diferencias${R.arts.length>MAXA?` · se muestran ${MAXA}`:''}`:''}</span></div>
+      ${R.arts.length?`<div class="cq-tw"><table class="cq-t"><tr><th>Código</th><th>Descripción</th><th class="r">Pickeado</th><th class="r">Con error</th><th class="r">Veces</th><th class="r">% error</th></tr>${arows}</table></div>`
+        :'<div class="cq-empty">Sin diferencias anotadas en este período.</div>'}
+      ${verA.some(a=>!a.b)?'<div class="cq-warn">Los artículos con «—» tienen diferencias pero no aparecen en el picking del informe.</div>':''}</div>
+  </div></div>`;
+  el.innerHTML=h;
+}
+function calSelEmp(k){ calEmp=k; renderCalidad(_calFil); }
+
+/* -- Lectura del CSV de VKM -- */
+function vkmElegir(){ const i=document.getElementById('vkm-file'); i.value=''; i.click(); }
+function vkmParse(txt){
+  const lines=String(txt).replace(/^\uFEFF/,'').split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2) throw new Error('El archivo está vacío');
+  const sep=lines[0].includes(';')?';':(lines[0].includes('\t')?'\t':',');
+  const H=lines[0].split(sep).map(x=>artNorm(x).trim());
+  const col=n=>H.indexOf(n);
+  const iT=col('tipo'), iI=col('inicio'), iO=col('operario'), iA=col('articulo'), iD=col('descripcion'), iC=col('cantidad'), iCB=col('cantidad blt');
+  if(iT<0||iI<0||iO<0||iA<0||(iC<0&&iCB<0))
+    throw new Error('No parece un informe de movimientos de VKM: faltan columnas (Tipo, Inicio, Operario, Artículo, Cantidad)');
+  const jor={};
+  let pis=0;
+  for(let i=1;i<lines.length;i++){
+    const p=lines[i].split(sep);
+    if(String(p[iT]||'').trim().toUpperCase()!=='PI') continue;
+    const m=String(p[iI]||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})/);
+    if(!m) continue;
+    let a=+m[3]; if(a<100) a+=2000;
+    const dt=new Date(a,+m[2]-1,+m[1],+m[4],+m[5]);
+    const hhmm=`${String(m[4]).padStart(2,'0')}:${m[5]}`;
+    // Misma regla que jornadaStr(): antes de las 14:30 cuenta para la jornada anterior
+    const j=new Date(dt); if(j.getHours()*60+j.getMinutes() < 14*60+30) j.setDate(j.getDate()-1);
+    const fecha=`${String(j.getDate()).padStart(2,'0')}/${String(j.getMonth()+1).padStart(2,'0')}/${j.getFullYear()}`;
+    let b=iC>=0?parseFloat(String(p[iC]).trim().replace(',','.')):NaN;
+    if(!(b>=0) && iCB>=0){ const fm=String(p[iCB]).match(/(-?\d+)\s*\/\s*(\d+)/); if(fm) b=(+fm[1])/(+fm[2]); }
+    if(!(b>0)) continue;
+    const J=jor[fecha]||(jor[fecha]={fecha,t0:null,t1:null,desde:'',hasta:'',lineas:0,bultos:0,prep:{},arts:{}});
+    const ms=dt.getTime();
+    if(J.t0===null||ms<J.t0){ J.t0=ms; J.desde=hhmm; }
+    if(J.t1===null||ms>J.t1){ J.t1=ms; J.hasta=hhmm; }
+    J.lineas++; J.bultos+=b;
+    const op=String(p[iO]||'').trim().toUpperCase()||'(SIN OPERARIO)';
+    const P=J.prep[op]||(J.prep[op]={n:op,b:0,l:0}); P.b+=b; P.l++;
+    const c=String(p[iA]||'').trim();
+    const A=J.arts[c]||(J.arts[c]={c,d:artFix(String(p[iD]||'').trim()),b:0,l:0}); A.b+=b; A.l++;
+    pis++;
+  }
+  if(!pis) throw new Error('El informe no tiene filas de picking (PI)');
+  const r3=x=>Math.round(x*1000)/1000;
+  return Object.values(jor).sort((x,y)=>x.t0-y.t0).map(J=>({fecha:J.fecha,desde:J.desde,hasta:J.hasta,lineas:J.lineas,bultos:r3(J.bultos),
+    prep:Object.values(J.prep).map(p=>({...p,b:r3(p.b)})).sort((x,y)=>y.b-x.b),
+    arts:Object.values(J.arts).map(a=>({...a,b:r3(a.b)})).sort((x,y)=>y.b-x.b)}));
+}
+async function vkmArchivoElegido(inp){
+  const file=inp.files&&inp.files[0]; if(!file) return;
+  let txt;
+  try{
+    const buf=await file.arrayBuffer();
+    try{ txt=new TextDecoder('utf-8',{fatal:true}).decode(buf); }
+    catch(e){ txt=new TextDecoder('windows-1252').decode(buf); } // VKM exporta en Latin-1
+  }catch(e){ toast('No se pudo leer el archivo','er'); return; }
+  let res;
+  try{ res=vkmParse(txt); }catch(e){ toast(e.message,'er'); return; }
+  const nm=getEmpName(calEmp);
+  // Control de cuenta: ¿los artículos del informe están en el listado de esta cuenta?
+  const lista=artsDe(calEmp);
+  if(lista.length){
+    const cods=new Set(lista.map(a=>codNorm(a.c)));
+    const todos=new Set(); res.forEach(j=>j.arts.forEach(a=>todos.add(codNorm(a.c))));
+    const ok=[...todos].filter(c=>cods.has(c)).length;
+    if(ok/todos.size<0.5 && !confirm(`Solo ${ok} de ${todos.size} artículos del informe están en el listado de ${nm}.\n¿Seguro que es un informe de ${nm}?`)) return;
+  }
+  const vk=loadVkm();
+  const pisa=res.filter(j=>vk[vkmDiaKey(j.fecha)]&&vk[vkmDiaKey(j.fecha)][calEmp]).map(j=>j.fecha);
+  if(pisa.length && !confirm(`Ya hay un informe de ${nm} para ${pisa.join(', ')}.\n¿Lo reemplazo por este?`)) return;
+  const online=!!(window.FB_READY && window.FB && window.FB.saveVkm);
+  for(const j of res){
+    const data={...j, archivo:file.name, cargado:Date.now()};
+    if(online){
+      try{ await window.FB.saveVkm(vkmDiaKey(j.fecha), calEmp, data); }
+      catch(e){ toast('No se pudo guardar en Firebase: '+(e&&(e.code||e.message)||'error'),'er'); return; }
+    }
+    const all=loadVkm(); (all[vkmDiaKey(j.fecha)]=all[vkmDiaKey(j.fecha)]||{})[calEmp]=data;
+    try{ localStorage.setItem(VKM_KEY, JSON.stringify(all)); }catch(e){}
+  }
+  const enPer=calFechasPeriodo(_calFil);
+  const fuera=res.filter(j=>!enPer(j.fecha)).map(j=>j.fecha);
+  let msg = res.length===1 ? `Informe de ${nm} del ${res[0].fecha}: ${nAR(res[0].bultos)} bultos de picking ✓`
+                           : `${res.length} jornadas de ${nm} cargadas ✓`;
+  if(!online) msg='Sin conexión: el informe quedó guardado solo en este equipo';
+  toast(msg, online?'ok':'er');
+  if(online && fuera.length) setTimeout(()=>toast(`Para verlo, elegí arriba la fecha ${fuera[0]}`,'in'),2600);
+  refreshSup(loadRecs());
+}
+
+function xlCod(c){ return /^\d+$/.test(String(c))?Number(c):(c||''); }
+/* -- Excel calidad: con formato, colores y gráficos (ExcelJS) -- */
+const XLC={navy:'FF1F2A44',azul:'FF4D8BFF',zebra:'FFF4F6FA',borde:'FFDDE2EA',gris:'FF8A93A6',texto:'FF2B3245',
+  rojo:'FFC0392B',verde:'FF1E8449',barra:'FFE57373',naranja:'FFB9770E'};
+function cargarExcelJS(){
+  return new Promise((ok,mal)=>{
+    if(window.ExcelJS) return ok();
+    const urls=['https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js',
+                'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js'];
+    const prueba=i=>{
+      if(i>=urls.length) return mal(new Error('No se pudo cargar la librería de Excel'));
+      const s=document.createElement('script'); s.src=urls[i];
+      s.onload=()=>window.ExcelJS?ok():prueba(i+1); s.onerror=()=>prueba(i+1);
+      document.head.appendChild(s);
+    };
+    prueba(0);
+  });
+}
+async function exportExcelCal(){
+  if(!activeComps().some(c=>{ const R=calCalcular(c.key,_calFil); return R.reps.length||R.det.length; })){ toast('No hay informes ni diferencias en este período','er'); return; }
+  toast('Generando Excel...','in');
+  try{ await cargarExcelJS(); await doExportCal(); }
+  catch(e){ console.error(e); toast('No se pudo generar el Excel: '+(e&&e.message||'error'),'er'); }
+}
+// Gráfico de barras horizontales dibujado en un canvas → PNG
+function calGrafico(titulo, filas, color){
+  const s=2, W=900, top=58, rowH=30, H=top+Math.max(filas.length,1)*rowH+22;
+  const cv=document.createElement('canvas'); cv.width=W*s; cv.height=H*s;
+  const g=cv.getContext('2d'); g.scale(s,s);
+  g.fillStyle='#FFFFFF'; g.fillRect(0,0,W,H);
+  g.textBaseline='middle';
+  g.fillStyle='#1F2A44'; g.font='bold 17px Arial'; g.fillText(titulo,20,28);
+  g.fillStyle='#DDE2EA'; g.fillRect(20,46,W-40,1);
+  const labW=330, valW=130, x0=20+labW, bw=W-x0-valW-20;
+  const max=Math.max(...filas.map(f=>f.v),0)||1;
+  filas.forEach((f,i)=>{
+    const y=top+i*rowH, cy=y+rowH/2;
+    g.font='13px Arial'; g.fillStyle='#2B3245';
+    let lab=String(f.l);
+    while(g.measureText(lab).width>labW-14 && lab.length>4) lab=lab.slice(0,-2);
+    if(lab!==String(f.l)) lab=lab.replace(/\s*\S?$/,'')+'…';
+    g.fillText(lab,20,cy);
+    g.fillStyle='#F0F2F6'; g.fillRect(x0,y+7,bw,rowH-14);
+    if(f.v>0){ g.fillStyle=color; g.fillRect(x0,y+7,Math.max(f.v/max*bw,3),rowH-14); }
+    g.font='bold 13px Arial'; g.fillStyle=f.v>0?'#1F2A44':'#8A93A6';
+    g.fillText(f.txt,x0+bw+12,cy);
+  });
+  return {base64:cv.toDataURL('image/png'), w:W, h:H};
+}
+function xlTitulo(ws, titulo, sub, ancho){
+  ws.mergeCells(1,1,1,ancho); ws.mergeCells(2,1,2,ancho);
+  const t=ws.getCell(1,1); t.value=titulo; t.font={name:'Arial',size:16,bold:true,color:{argb:XLC.navy}};
+  ws.getRow(1).height=26;
+  const s=ws.getCell(2,1); s.value=sub; s.font={name:'Arial',size:9,color:{argb:XLC.gris}};
+}
+function xlCabecera(ws, fila, cols, align=[]){
+  const r=ws.getRow(fila); r.height=22;
+  cols.forEach((c,i)=>{
+    const cell=r.getCell(i+1); cell.value=c;
+    cell.font={name:'Arial',size:9.5,bold:true,color:{argb:'FFFFFFFF'}};
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:XLC.navy}};
+    cell.alignment={vertical:'middle',horizontal:align[i]||'left',wrapText:true,indent:align[i]==='right'?0:0};
+  });
+}
+function xlFila(ws, fila, vals, i, opt={}){
+  const r=ws.getRow(fila); r.height=18;
+  vals.forEach((v,j)=>{
+    const c=r.getCell(j+1); c.value=v;
+    c.font={name:'Arial',size:10,color:{argb:opt.apagado?XLC.gris:XLC.texto},...(opt.fonts&&opt.fonts[j]||{})};
+    if(i%2) c.fill={type:'pattern',pattern:'solid',fgColor:{argb:XLC.zebra}};
+    c.border={bottom:{style:'thin',color:{argb:XLC.borde}}};
+    c.alignment={vertical:'middle',...(opt.align&&opt.align[j]?{horizontal:opt.align[j]}:{})};
+    if(opt.fmt&&opt.fmt[j]) c.numFmt=opt.fmt[j];
+  });
+}
+// % como fórmula: así se recalcula si alguien corrige un número en el Excel
+function xlPct(colE, colB, fila, e, b){
+  return {formula:`IF(${colB}${fila}=0,"—",${colE}${fila}/${colB}${fila})`, result: b?e/b:'—'};
+}
+// Barra hecha con texto: se ve igual en Excel, LibreOffice y Google Sheets
+function xlNivel(colP, f, desde, hasta, valor, max){
+  const n=(typeof valor==='number' && max>0)?Math.round(valor/max*20):0;
+  return {formula:`IF(ISNUMBER(${colP}${f}),REPT("█",ROUND(${colP}${f}/MAX(${colP}$${desde}:${colP}$${hasta})*20,0)),"")`,
+          result:n?'█'.repeat(n):''};
+}
+function xlNivelEstilo(ws, col, desde, hasta){
+  for(let r=desde;r<=hasta;r++){ const c=ws.getCell(r,col); c.font={name:'Consolas',size:9,color:{argb:XLC.barra}}; c.alignment={vertical:'middle',indent:1}; }
+  const h=ws.getCell(desde-1,col); h.alignment={vertical:'middle',horizontal:'left',indent:1};
+}
+function xlBarra(ws, ref){
+  ws.addConditionalFormatting({ref, rules:[{type:'dataBar',gradient:false,border:false,showValue:false,minLength:0,maxLength:100,
+    cfvo:[{type:'num',value:0},{type:'max'}], color:{argb:XLC.barra}}]});
+}
+function xlPagina(ws){ ws.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:.4,right:.4,top:.5,bottom:.5,header:.2,footer:.2}}; }
+
+async function doExportCal(){
+  const todas=activeComps().map(c=>({c,R:calCalcular(c.key,_calFil)}));
+  const conInf=todas.filter(x=>x.R.reps.length);
+  if(!conInf.length && !todas.some(x=>x.R.det.length)){ toast('No hay informes ni diferencias en este período','er'); return; }
+  const ahora=new Date();
+  const gen=`${String(ahora.getDate()).padStart(2,'0')}/${String(ahora.getMonth()+1).padStart(2,'0')}/${ahora.getFullYear()} ${String(ahora.getHours()).padStart(2,'0')}:${String(ahora.getMinutes()).padStart(2,'0')}`;
+  const jornadas=R=>R.reps.length===1?R.reps[0].fecha:`${R.reps.length} (${R.reps[0].fecha} a ${R.reps[R.reps.length-1].fecha})`;
+  const periodo=routeFilter?`Ruta ${routeFilter}`:specificDate?`Jornada ${specificDate}`:({hoy:`Jornada ${jornadaStr()}`,semana:'Últimas 7 jornadas',mes:'Últimas 30 jornadas',todo:'Todo el historial'})[supPeriod]||'';
+  const sub=`${periodo} · Generado el ${gen} · Fuente: diferencias anotadas por los controladores + picking (PI) del informe de VKM`;
+  const NUM='#,##0', PCT='0.00%';
+  const wb=new ExcelJS.Workbook(); wb.creator='Control Pallets'; wb.created=ahora;
+  const nombreHoja=n=>String(n).replace(/[\[\]:*?\/\\]/g,' ').slice(0,31)||'Cuenta';
+  const usados=new Set(['Resumen','Detalle']);
+  const hojaUnica=n=>{ let b=nombreHoja(n), x=b, k=2; while(usados.has(x)) x=`${b.slice(0,28)} ${k++}`; usados.add(x); return x; };
+  const imagen=(ws,img,col,fila,w)=>{
+    const id=wb.addImage({base64:img.base64,extension:'png'});
+    const h=Math.round(img.h*w/img.w);
+    ws.addImage(id,{tl:{col,row:fila-1},ext:{width:w,height:h}});
+    return h;
+  };
+  const graficoPrep=(c,R)=>calGrafico(`% de error por preparador · ${c.name}`,
+    R.prep.map(p=>({l:p.n,v:p.b?p.e/p.b:0,txt:`${pctTxt(p.e,p.b)}  (${p.e}/${nAR(p.b)})`})),'#4D8BFF');
+  const graficoArt=(c,R)=>{
+    const top=[...R.arts].sort((x,y)=>(y.e-x.e)||(y.v-x.v)).slice(0,10);
+    return top.length?calGrafico(`Artículos con más bultos con error · ${c.name}`,
+      top.map(a=>({l:`${a.c} · ${a.d}`,v:a.e,txt:`${a.e} blt · ${a.b?pctTxt(a.e,a.b):'—'}`})),'#E57373'):null;
+  };
+
+  // ── Resumen: todas las cuentas
+  const ws=wb.addWorksheet('Resumen',{views:[{showGridLines:false}]});
+  ws.columns=[{width:16},{width:26},{width:17},{width:12},{width:10},{width:10},{width:13}];
+  xlTitulo(ws,'Calidad de preparación',sub,7);
+  ws.mergeCells(3,1,3,7);
+  const n3=ws.getCell(3,1); n3.value='% de error = bultos con diferencia ÷ bultos pickeados. El detalle de cada cuenta está en su propia hoja.';
+  n3.font={name:'Arial',size:9,italic:true,color:{argb:XLC.gris}};
+  xlCabecera(ws,5,['Cuenta','Jornadas','Bultos pickeados','Con error','Sobra','Falta','% error'],[,,'right','right','right','right','right']);
+  let f=6;
+  conInf.forEach(({c,R},i)=>{
+    xlFila(ws,f,[c.name,jornadas(R),R.bultos,R.e,R.s,R.f,xlPct('D','C',f,R.e,R.bultos)],i,
+      {fmt:[,,NUM,NUM,NUM,NUM,PCT],align:[,,'right','right','right','right','right'],
+       fonts:[{bold:true},,,,{color:{argb:XLC.verde}},{color:{argb:XLC.rojo}},{bold:true,size:12,color:{argb:XLC.navy}}]});
+    ws.getRow(f).height=22; f++;
+  });
+  if(!conInf.length){
+    ws.mergeCells(f,1,f,7);
+    const c=ws.getCell(f,1);
+    c.value='No hay informes de VKM cargados en este período, así que no se puede calcular el %. Todas las diferencias anotadas están en la hoja Detalle.';
+    c.font={name:'Arial',size:10,italic:true,color:{argb:XLC.naranja}}; c.alignment={wrapText:true,vertical:'middle'};
+    ws.getRow(f).height=32; f++;
+  }
+  if(conInf.length>1){
+    const a=6,b=f-1, sum=k=>conInf.reduce((t,x)=>t+x.R[k],0);
+    xlFila(ws,f,['Total','',{formula:`SUM(C${a}:C${b})`,result:sum('bultos')},{formula:`SUM(D${a}:D${b})`,result:sum('e')},
+      {formula:`SUM(E${a}:E${b})`,result:sum('s')},{formula:`SUM(F${a}:F${b})`,result:sum('f')},xlPct('D','C',f,sum('e'),sum('bultos'))],0,
+      {fmt:[,,NUM,NUM,NUM,NUM,PCT],align:[,,'right','right','right','right','right'],fonts:Array(7).fill({bold:true})});
+    ws.getRow(f).eachCell(c=>{ c.border={top:{style:'medium',color:{argb:XLC.navy}}}; c.fill=undefined; });
+    f++;
+    imagen(ws,calGrafico('% de error por cuenta',conInf.map(({c,R})=>({l:c.name,v:R.bultos?R.e/R.bultos:0,
+      txt:`${pctTxt(R.e,R.bultos)}  (${nAR(R.e)}/${nAR(R.bultos)})`})),'#1F2A44'),0,f+2,680);
+  }
+  xlPagina(ws);
+
+  // ── Una hoja por cuenta
+  conInf.forEach(({c,R})=>{
+    const w=wb.addWorksheet(hojaUnica(c.name),{views:[{showGridLines:false}],properties:{tabColor:{argb:'FF'+String(c.color||'#4D8BFF').replace('#','').toUpperCase()}}});
+    // Columnas compartidas por las dos tablas: A+B = preparador / código+descripción
+    w.columns=[{width:12},{width:46},{width:16},{width:11},{width:9},{width:9},{width:9},{width:11},{width:22}];
+    xlTitulo(w,`Calidad de preparación · ${c.name}`,sub,9);
+    // Números grandes
+    const kpis=[['A','% de error',xlPct('D','C',5,R.e,R.bultos),PCT,XLC.navy],['B','Jornadas',jornadas(R),null,XLC.texto],
+      ['C','Bultos pickeados',R.bultos,NUM,XLC.texto],['D','Con error',R.e,NUM,XLC.texto],['E','Sobra',R.s,NUM,XLC.verde],['F','Falta',R.f,NUM,XLC.rojo]];
+    kpis.forEach(([col,lab,val,fmt,color])=>{
+      const l=w.getCell(`${col}4`); l.value=lab; l.font={name:'Arial',size:8.5,bold:true,color:{argb:XLC.gris}};
+      l.alignment={horizontal:col==='A'||col==='B'?'left':'right'};
+      const v=w.getCell(`${col}5`); v.value=val; if(fmt) v.numFmt=fmt;
+      v.font={name:'Arial',size:col==='A'?20:(col==='B'?11:14),bold:true,color:{argb:color}};
+      v.alignment={vertical:'middle',horizontal:col==='A'||col==='B'?'left':'right'};
+    });
+    w.getRow(5).height=32;
+    ['A','B','C','D','E','F'].forEach(col=>{ w.getCell(`${col}5`).border={bottom:{style:'thin',color:{argb:XLC.borde}}}; });
+    // Gráficos lado a lado
+    // Gráficos uno debajo del otro
+    const gP=graficoPrep(c,R), gA=graficoArt(c,R);
+    let fl=7;
+    fl+=Math.ceil(imagen(w,gP,0,fl,760)/20)+1;
+    if(gA){ w.getRow(fl-1).addPageBreak(); fl+=1; fl+=Math.ceil(imagen(w,gA,0,fl,760)/20)+1; }
+    fl+=1;
+    w.getRow(fl-1).addPageBreak();
+    // Tabla por preparador (preparador ocupa A:B)
+    const sec=(fila,txt)=>{ const s=w.getCell(fila,1); s.value=txt; s.font={name:'Arial',size:12,bold:true,color:{argb:XLC.navy}}; w.getRow(fila).height=22; };
+    sec(fl,'Por preparador'); fl++;
+    xlCabecera(w,fl,['Preparador','','Bultos pickeados','Con error','Sobra','Falta','Veces','% error','Nivel'],[,,'right','right','right','right','right','right']);
+    w.mergeCells(fl,1,fl,2); fl++;
+    const pIni=fl, pFin=fl+R.prep.length+R.sinCruce.length-1;
+    const pMax=Math.max(0,...R.prep.map(p=>p.b?p.e/p.b:0));
+    R.prep.forEach((p,i)=>{
+      xlFila(w,fl,[p.n,'',p.b,p.e,p.s,p.f,p.v,xlPct('D','C',fl,p.e,p.b),xlNivel('H',fl,pIni,pFin,p.b?p.e/p.b:'',pMax)],i,
+        {apagado:!p.e,fmt:[,,NUM,NUM,NUM,NUM,NUM,PCT],align:[,,'right','right','right','right','right','right'],fonts:[{bold:!!p.e},,,,,,,{bold:!!p.e}]});
+      w.mergeCells(fl,1,fl,2); fl++;
+    });
+    R.sinCruce.forEach((p,i)=>{
+      xlFila(w,fl,[`${p.n} (no figura en VKM)`,'','—',p.e,p.s,p.f,p.v,'—',''],R.prep.length+i,
+        {fmt:[,,,NUM,NUM,NUM,NUM],align:[,,'right','right','right','right','right','right'],fonts:[{italic:true,color:{argb:XLC.naranja}}]});
+      w.mergeCells(fl,1,fl,2); fl++;
+    });
+    if(pFin>=pIni) xlNivelEstilo(w,9,pIni,pFin);
+    fl+=2;
+    w.getRow(fl-1).addPageBreak();
+    // Tabla por artículo
+    sec(fl,'Por artículo'); fl++;
+    if(!R.arts.length){
+      const s=w.getCell(fl,1); s.value='Sin diferencias anotadas en este período.'; s.font={name:'Arial',size:10,italic:true,color:{argb:XLC.gris}};
+    } else {
+      xlCabecera(w,fl,['Código','Descripción','Bultos pickeados','Con error','Sobra','Falta','Veces','% error','Nivel'],[,,'right','right','right','right','right','right']);
+      fl++;
+      const aIni=fl, aFin=fl+R.arts.length-1;
+      const aMax=Math.max(0,...R.arts.map(a=>a.b?a.e/a.b:0));
+      R.arts.forEach((a,i)=>{
+        xlFila(w,fl,[xlCod(a.c),a.d,a.b||'—',a.e,a.s,a.f,a.v,xlPct('D','C',fl,a.e,a.b),xlNivel('H',fl,aIni,aFin,a.b?a.e/a.b:'',aMax)],i,
+          {fmt:['0',,NUM,NUM,NUM,NUM,NUM,PCT],align:['left',,'right','right','right','right','right','right'],fonts:[{bold:true},,,,,,,{bold:true}]});
+        fl++;
+      });
+      xlNivelEstilo(w,9,aIni,aFin);
+    }
+    xlPagina(w);
+  });
+
+  // ── Detalle: todas las diferencias, con filtros
+  const wd=wb.addWorksheet('Detalle',{views:[{state:'frozen',ySplit:4,showGridLines:false}]});
+  wd.columns=[{width:12},{width:10},{width:18},{width:12},{width:20},{width:10},{width:50},{width:9},{width:9},{width:30}];
+  xlTitulo(wd,'Detalle de diferencias',sub,10);
+  xlCabecera(wd,4,['Fecha','ID Ruta','Controlador','Cuenta','Preparador','Código','Descripción','Tipo','Bultos','Observación'],[,,,,,,,'center','right']);
+  const filas=[];
+  todas.forEach(({c,R})=>R.det.forEach(({r,d,obs})=>filas.push([r.fecha,r.id_ruta,r.ctrl,c.name,d.prep,xlCod(d.cod),d.desc,
+    Number(d.cant)>0?'Sobra':'Falta',Number(d.cant)||0,obs])));
+  filas.sort((x,y)=>vkmDiaKey(x[0]).localeCompare(vkmDiaKey(y[0]))||String(x[3]).localeCompare(String(y[3]))||String(x[1]).localeCompare(String(y[1])));
+  f=5;
+  filas.forEach((v,k)=>{
+    const col={argb:v[7]==='Sobra'?XLC.verde:XLC.rojo};
+    xlFila(wd,f,v,k,{fmt:[,,,,,'0',,,'+0;-0;0'],align:[,'left',,,,'left',,'center','right'],
+      fonts:[,,,,,{bold:true},,{bold:true,color:col},{bold:true,color:col},{italic:true,color:{argb:XLC.naranja}}]});
+    wd.getCell(f,10).alignment={vertical:'middle',indent:1}; f++;
+  });
+  wd.getCell(4,10).alignment={vertical:'middle',horizontal:'left',indent:1};
+  if(f>5) wd.autoFilter={from:'A4',to:`J${f-1}`};
+  xlPagina(wd);
+
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`Calidad_${exportLabel()}.xlsx`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },3000);
+  toast('Excel de calidad exportado ✓','ok');
 }
 
 /* ══════════════ CONTROLLER PROFILE ══════════════════════ */
