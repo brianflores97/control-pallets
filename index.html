@@ -1725,7 +1725,7 @@ tr.drow td{background:var(--sf2);padding:8px 14px 10px!important}
 const STOR_KEY  = 'pallets_v3';
 /* Versión visible abajo del tablero: si no coincide con la última que subiste,
    el navegador se quedó con la copia vieja en caché. */
-const VER = 'v7 · horario editable';
+const VER = 'v8 · informes VKM sin pisar';
 const POLL_MS   = 10000;
 const AV_COLORS = ['#4d8bff','#c084fc','#2dd4bf','#fb923c','#f472b6','#a3e635','#fbbf24','#e879f9'];
 const DRAFT_KEY  = ()=>`pallets_draft_${me||'_'}`;
@@ -3593,9 +3593,28 @@ function vkmParse(txt){
   }
   if(!pis) throw new Error('El informe no tiene filas de picking (PI)');
   const r3=x=>Math.round(x*1000)/1000;
-  return Object.values(jor).sort((x,y)=>x.t0-y.t0).map(J=>({fecha:J.fecha,desde:J.desde,hasta:J.hasta,lineas:J.lineas,bultos:r3(J.bultos),
+  return Object.values(jor).sort((x,y)=>x.t0-y.t0).map(J=>({fecha:J.fecha,desde:J.desde,hasta:J.hasta,t0:J.t0,t1:J.t1,lineas:J.lineas,bultos:r3(J.bultos),
     prep:Object.values(J.prep).map(p=>({...p,b:r3(p.b)})).sort((x,y)=>y.b-x.b),
     arts:Object.values(J.arts).map(a=>({...a,b:r3(a.b)})).sort((x,y)=>y.b-x.b)}));
+}
+// Momento del primer y último picking de un informe guardado (los viejos no lo traen: se calcula con desde/hasta)
+function vkmVentana(r){
+  if(r.t0 && r.t1) return {t0:r.t0,t1:r.t1};
+  const [d,m,a]=String(r.fecha).split('/').map(Number);
+  const ms=hm=>{ const [h,mi]=String(hm||'00:00').split(':').map(Number); const x=new Date(a,m-1,d,h,mi);
+    if(h*60+mi<14*60+30) x.setDate(x.getDate()+1); return x.getTime(); };
+  return {t0:ms(r.desde), t1:ms(r.hasta)};
+}
+// Suma dos partes de la misma jornada (sin superposición)
+function vkmSumar(a,b,archivo){
+  const A=vkmVentana(a);
+  const r3=x=>Math.round(x*1000)/1000;
+  const junta=(xs,ys,k)=>{ const o={}; [...vkmLista(xs),...vkmLista(ys)].forEach(x=>{ const key=String(x[k]);
+    const y=o[key]||(o[key]={...x,b:0,l:0}); y.b=r3(y.b+(Number(x.b)||0)); y.l+=Number(x.l)||0; }); return Object.values(o).sort((p,q)=>q.b-p.b); };
+  const primero=A.t0<=b.t0;
+  return {fecha:a.fecha, desde:primero?a.desde:b.desde, hasta:primero?b.hasta:a.hasta,
+    t0:Math.min(A.t0,b.t0), t1:Math.max(A.t1,b.t1), lineas:(Number(a.lineas)||0)+(Number(b.lineas)||0), bultos:r3((Number(a.bultos)||0)+(Number(b.bultos)||0)),
+    prep:junta(a.prep,b.prep,'n'), arts:junta(a.arts,b.arts,'c'), archivo:`${a.archivo||''} + ${archivo}`};
 }
 async function vkmArchivoElegido(inp){
   const file=inp.files&&inp.files[0]; if(!file) return;
@@ -3616,12 +3635,29 @@ async function vkmArchivoElegido(inp){
     const ok=[...todos].filter(c=>cods.has(c)).length;
     if(ok/todos.size<0.5 && !confirm(`Solo ${ok} de ${todos.size} artículos del informe están en el listado de ${nm}.\n¿Seguro que es un informe de ${nm}?`)) return;
   }
-  const vk=loadVkm();
-  const pisa=res.filter(j=>vk[vkmDiaKey(j.fecha)]&&vk[vkmDiaKey(j.fecha)][calEmp]).map(j=>j.fecha);
-  if(pisa.length && !confirm(`Ya hay un informe de ${nm} para ${pisa.join(', ')}.\n¿Lo reemplazo por este?`)) return;
-  const online=!!(window.FB_READY && window.FB && window.FB.saveVkm);
+  // Jornadas que ya tienen informe: comparar antes de tocar nada
+  const vk=loadVkm(), aGuardar=[], notas=[];
   for(const j of res){
-    const data={...j, archivo:file.name, cargado:Date.now()};
+    const prev=vk[vkmDiaKey(j.fecha)]&&vk[vkmDiaKey(j.fecha)][calEmp];
+    if(!prev){ aGuardar.push(j); continue; }
+    const P=vkmVentana(prev);
+    const linea=(x)=>`picking de ${x.desde} a ${x.hasta} · ${nAR(x.bultos)} bultos`;
+    if(j.t0>P.t1 || j.t1<P.t0){
+      // No se superponen: es picking de la misma jornada que no estaba en el informe cargado
+      if(confirm(`El archivo trae picking de ${nm} del ${j.fecha} que no estaba en el informe cargado.\n\nCargado: ${linea(prev)}\nNuevo: ${linea(j)}\n\n¿Lo sumo al informe de esa jornada?`)){
+        aGuardar.push(vkmSumar(prev,j,file.name)); notas.push(`${j.fecha}: se sumó lo nuevo`);
+      } else notas.push(`${j.fecha}: sin cambios`);
+      continue;
+    }
+    if(Math.abs(j.bultos-prev.bultos)<0.001 && j.lineas===prev.lineas){ notas.push(`${j.fecha}: ya estaba cargado igual`); continue; }
+    if(j.bultos<prev.bultos){ notas.push(`${j.fecha}: se dejó como estaba (el archivo trae solo una parte)`); continue; }
+    if(confirm(`Ya hay un informe de ${nm} para el ${j.fecha}.\n\nCargado: ${linea(prev)}\nNuevo: ${linea(j)}\n\nEl nuevo tiene más picking. ¿Lo reemplazo?`)){
+      aGuardar.push(j); notas.push(`${j.fecha}: reemplazado por el más completo`);
+    } else notas.push(`${j.fecha}: sin cambios`);
+  }
+  const online=!!(window.FB_READY && window.FB && window.FB.saveVkm);
+  for(const j of aGuardar){
+    const data={...j, archivo:j.archivo||file.name, cargado:Date.now()};
     if(online){
       try{ await window.FB.saveVkm(vkmDiaKey(j.fecha), calEmp, data); }
       catch(e){ toast('No se pudo guardar en Firebase: '+(e&&(e.code||e.message)||'error'),'er'); return; }
@@ -3629,11 +3665,14 @@ async function vkmArchivoElegido(inp){
     const all=loadVkm(); (all[vkmDiaKey(j.fecha)]=all[vkmDiaKey(j.fecha)]||{})[calEmp]=data;
     try{ localStorage.setItem(VKM_KEY, JSON.stringify(all)); }catch(e){}
   }
+  const nuevas=aGuardar.filter(j=>!notas.some(n=>n.startsWith(j.fecha+':'))).map(j=>j.fecha);
+  if(nuevas.length) notas.unshift(`${nuevas.length===1?nuevas[0]:nuevas.join(', ')}: cargad${nuevas.length===1?'o':'os'}`);
+  res.length=0; aGuardar.forEach(j=>res.push(j)); // para el aviso de "elegí la fecha"
   const enPer=calFechasPeriodo(_calFil);
   const fuera=res.filter(j=>!enPer(j.fecha)).map(j=>j.fecha);
-  let msg = res.length===1 ? `Informe de ${nm} del ${res[0].fecha}: ${nAR(res[0].bultos)} bultos de picking ✓`
-                           : `${res.length} jornadas de ${nm} cargadas ✓`;
-  if(!online) msg='Sin conexión: el informe quedó guardado solo en este equipo';
+  let msg = `${nm} · ${notas.join(' · ')}`;
+  if(!aGuardar.length){ toast(msg,'in'); refreshSup(loadRecs()); return; }
+  if(!online) msg='Sin conexión: el informe quedó guardado solo en este equipo · '+notas.join(' · ');
   toast(msg, online?'ok':'er');
   if(online && fuera.length) setTimeout(()=>toast(`Para verlo, elegí arriba la fecha ${fuera[0]}`,'in'),2600);
   refreshSup(loadRecs());
