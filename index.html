@@ -377,6 +377,20 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 .tbtn.s{background:rgba(22,163,74,.08);color:var(--grn);border-color:rgba(22,163,74,.25)}
 .tbtn.e{background:rgba(220,38,38,.08);color:var(--red);border-color:rgba(220,38,38,.25)}
 .tbtn:disabled{opacity:.25;cursor:not-allowed}
+/* Horario editable a mano */
+.time-row>.tb2{min-width:0}
+.tacts{display:flex;gap:5px;flex-wrap:wrap}
+.tbtn.m{background:transparent;color:var(--tx2);border-color:var(--bd)}
+.tedit{display:flex;flex-direction:column;gap:5px}
+.tedit-b{display:flex;gap:5px}
+.tedit input{width:100%;min-width:0;box-sizing:border-box;background:var(--sf);border:1px solid var(--acc);border-radius:5px;padding:6px 8px;
+  font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--tx);outline:none}
+.tedit button{padding:6px 10px;border-radius:5px;font-size:10px;font-weight:700;border:1px solid var(--acc);background:var(--acc);color:#fff;font-family:inherit;cursor:pointer}
+.tedit button.x{background:transparent;border-color:var(--bd);color:var(--tx3)}
+.tman{font-family:'Inter',sans-serif;font-size:9px;font-weight:600;color:var(--tx3);margin-left:6px;letter-spacing:.3px;
+  border:1px solid var(--bd);border-radius:4px;padding:1px 5px;vertical-align:3px}
+.tnote{font-size:10px;color:var(--tx3);margin-top:2px;line-height:1.4}
+.hman{color:var(--tx3);font-size:10px;margin-left:3px;cursor:help}
 /* Empresa blocks */
 .eb{background:var(--sf2);border:1px solid var(--bd);
   border-radius:var(--rs);margin-bottom:6px;overflow:hidden;transition:border-color .15s}
@@ -1369,13 +1383,31 @@ tr.drow td{background:var(--sf2);padding:8px 14px 10px!important}
     <div class="time-row">
       <div class="tb2" id="tb-ini">
         <div class="tl2">🟢 Inicio</div>
-        <div class="tv2" id="tv-ini">--:--</div>
-        <button class="tbtn s" id="btn-ini" onclick="markTime('ini')">Marcar inicio</button>
+        <div class="tv2" id="tw-ini"><span id="tv-ini">--:--</span><span class="tman" id="tm-ini" style="display:none">a mano</span></div>
+        <div class="tedit" id="te-ini" style="display:none">
+          <input id="ti-ini" type="text" inputmode="numeric" placeholder="HH:MM" maxlength="5" autocomplete="off"
+            oninput="horaFmt(this)" onkeydown="if(event.key==='Enter')horaOk('ini')">
+          <div class="tedit-b"><button type="button" onclick="horaOk('ini')">OK</button><button type="button" class="x" onclick="horaCerrar('ini')">✕</button></div>
+          <div class="tnote">Escribí la hora en que empezó, por ejemplo 2140</div>
+        </div>
+        <div class="tacts" id="ta-ini">
+          <button class="tbtn s" id="btn-ini" onclick="markTime('ini')">Marcar inicio</button>
+          <button class="tbtn m" id="bm-ini" onclick="horaEditar('ini')">✎ Hora</button>
+        </div>
       </div>
       <div class="tb2" id="tb-fin">
         <div class="tl2">🔴 Fin</div>
-        <div class="tv2" id="tv-fin">--:--</div>
-        <button class="tbtn e" id="btn-fin" onclick="markTime('fin')" disabled>Marcar fin</button>
+        <div class="tv2" id="tw-fin"><span id="tv-fin">--:--</span><span class="tman" id="tm-fin" style="display:none">a mano</span></div>
+        <div class="tedit" id="te-fin" style="display:none">
+          <input id="ti-fin" type="text" inputmode="numeric" placeholder="HH:MM" maxlength="5" autocomplete="off"
+            oninput="horaFmt(this)" onkeydown="if(event.key==='Enter')horaOk('fin')">
+          <div class="tedit-b"><button type="button" onclick="horaOk('fin')">OK</button><button type="button" class="x" onclick="horaCerrar('fin')">✕</button></div>
+          <div class="tnote">Escribí la hora en que terminó, por ejemplo 2215</div>
+        </div>
+        <div class="tacts" id="ta-fin">
+          <button class="tbtn e" id="btn-fin" onclick="markTime('fin')" disabled>Marcar fin</button>
+          <button class="tbtn m" id="bm-fin" onclick="horaEditar('fin')" disabled>✎ Hora</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1693,7 +1725,7 @@ tr.drow td{background:var(--sf2);padding:8px 14px 10px!important}
 const STOR_KEY  = 'pallets_v3';
 /* Versión visible abajo del tablero: si no coincide con la última que subiste,
    el navegador se quedó con la copia vieja en caché. */
-const VER = 'v6 · un solo Excel de calidad';
+const VER = 'v7 · horario editable';
 const POLL_MS   = 10000;
 const AV_COLORS = ['#4d8bff','#c084fc','#2dd4bf','#fb923c','#f472b6','#a3e635','#fbbf24','#e879f9'];
 const DRAFT_KEY  = ()=>`pallets_draft_${me||'_'}`;
@@ -1741,6 +1773,7 @@ function getEmpColor(k){ return compByKey(k).color; }
 let me = null, role = null;
 let editId = null;
 let tIni = null, tFin = null;
+let tIniManual = false, tFinManual = false; // hora cargada a mano (no con el botón)
 let supPeriod = 'hoy', supTab = 'reg';
 let profCtrl = null, profPeriod = 'hoy';
 let pollTimer = null, lastHash = '';
@@ -2219,7 +2252,7 @@ function refreshDash(recs){
     return `<div class="rc" onclick="goForm('${r.id}')">
       <div class="rt">
         <span class="rb">${r.id_ruta}</span>
-        <span class="rtm">${r.hora_ini||'--'}→${r.hora_fin||'--'}${dur?` · ${fmtMin(dur)}`:''}</span>
+        <span class="rtm">${r.hora_ini||'--'}${r.ini_manual?'✎':''}→${r.hora_fin||'--'}${r.fin_manual?'✎':''}${dur?` · ${fmtMin(dur)}`:''}</span>
       </div>
       <div class="chips">${chips||'<span style="font-size:11px;color:var(--tx3)">Sin pallets</span>'}${difChip(r)}</div>
       <div class="rec-edit">✏ Tap para editar</div>
@@ -2257,6 +2290,8 @@ function goForm(id){
         document.getElementById('btn-fin').disabled=true;
         document.getElementById('tb-fin').classList.add('set');
       }
+      tIniManual=!!r.ini_manual; tFinManual=!!r.fin_manual;
+      timeUI();
       document.getElementById('inp-obs').value=r.obs||'';
       // Diferencias por cuenta (los registros viejos no las tienen)
       difList = (r.diferencias||[]).map(d=>({...d}));
@@ -2323,7 +2358,8 @@ function renderEmpresasForm(){
   difRenderAll();
 }
 function resetForm(){
-  tIni=null; tFin=null;
+  tIni=null; tFin=null; tIniManual=false; tFinManual=false;
+  horaCerrar('ini'); horaCerrar('fin');
   document.getElementById('inp-ruta').value='';
   document.getElementById('tv-ini').textContent='--:--';
   document.getElementById('tv-fin').textContent='--:--';
@@ -2339,6 +2375,7 @@ function resetForm(){
   updateFormLock(); // bloquear secciones hasta que se marque inicio
 }
 function updateFormLock(){
+  timeUI();
   const locked = !tIni;
   const ids = ['empresas-inner','prep-inner','obs-inner'];
   ids.forEach(id=>{
@@ -2353,7 +2390,7 @@ function markTime(w){
   const t=nowTime();
   if(w==='ini'){
     if(!confirm(`¿Iniciás el control ahora?\n${t}`)) return;
-    tIni=t;
+    tIni=t; tIniManual=false;
     document.getElementById('tv-ini').textContent=t;
     document.getElementById('btn-ini').disabled=true;
     document.getElementById('btn-fin').disabled=false;
@@ -2361,11 +2398,12 @@ function markTime(w){
     updateFormLock(); // desbloquear secciones
   } else {
     if(!confirm(`¿Cerrás el control ahora?\n${t}`)) return;
-    tFin=t;
+    tFin=t; tFinManual=false;
     document.getElementById('tv-fin').textContent=t;
     document.getElementById('btn-fin').disabled=true;
     document.getElementById('tb-fin').classList.add('set');
   }
+  timeUI();
   scheduleDraftSave();
 }
 function togEmpresa(e){
@@ -2418,6 +2456,8 @@ function saveRecord(){
     id_ruta: ruta,
     hora_ini: tIni||'',
     hora_fin: tFin||'',
+    ini_manual: !!tIniManual,
+    fin_manual: !!tFinManual,
     obs: (document.getElementById('inp-obs').value||'').trim(),
     // El recuadro suelto de preparadores ya no existe: se conservan los datos viejos tal cual
     preparadores: existing?.preparadores || [],
@@ -2830,8 +2870,8 @@ function renderTable(rows){
           : ''}
       </td>
       <td>${r.ctrl}</td>
-      <td>${r.hora_ini||'—'}</td>
-      <td>${r.hora_fin||'—'}</td>
+      <td>${r.hora_ini||'—'}${r.ini_manual?'<span class="hman" title="Hora cargada a mano">✎</span>':''}</td>
+      <td>${r.hora_fin||'—'}${r.fin_manual?'<span class="hman" title="Hora cargada a mano">✎</span>':''}</td>
       <td style="color:var(--grn)">${fmtMin(dur)}</td>
       ${difCellHtml(r)}
       ${compCols}
@@ -3849,6 +3889,77 @@ async function doExportCal(){
   toast('Excel de calidad exportado ✓','ok');
 }
 
+
+/* ══════════════ HORARIO CARGADO A MANO ══════════════════════
+   Para cuando el controlador se olvidó de marcar el inicio (o el fin) con el botón. */
+function hMin(t){ const [h,m]=String(t).split(':').map(Number); return h*60+m; }
+function timeUI(){
+  const bi=document.getElementById('btn-ini'), bf=document.getElementById('btn-fin');
+  const mi=document.getElementById('bm-ini'), mf=document.getElementById('bm-fin');
+  if(!bi||!mi) return;
+  bi.style.display=tIni?'none':''; bi.disabled=!!tIni;
+  mi.textContent=tIni?'✎ Cambiar':'✎ Hora';
+  bf.style.display=tFin?'none':''; bf.disabled=!tIni||!!tFin;
+  mf.textContent=tFin?'✎ Cambiar':'✎ Hora'; mf.disabled=!tIni;
+  document.getElementById('tm-ini').style.display=(tIni&&tIniManual)?'':'none';
+  document.getElementById('tm-fin').style.display=(tFin&&tFinManual)?'':'none';
+}
+function horaEditar(w){
+  if(w==='fin' && !tIni) return;
+  const inp=document.getElementById('ti-'+w);
+  inp.value=(w==='ini'?tIni:tFin)||'';
+  document.getElementById('tw-'+w).style.display='none';
+  document.getElementById('ta-'+w).style.display='none';
+  document.getElementById('te-'+w).style.display='';
+  inp.focus(); inp.select();
+}
+function horaCerrar(w){
+  const te=document.getElementById('te-'+w); if(!te) return;
+  te.style.display='none';
+  document.getElementById('tw-'+w).style.display='';
+  document.getElementById('ta-'+w).style.display='';
+}
+// Mientras escribe: "2140" → "21:40", "940" → "9:40"
+function horaFmt(inp){
+  const d=inp.value.replace(/\D/g,'').slice(0,4);
+  inp.value=d.length>2?d.slice(0,d.length-2)+':'+d.slice(-2):d;
+}
+function horaParse(v){
+  const d=String(v||'').replace(/\D/g,'');
+  if(d.length<3||d.length>4) return null;
+  const h=+d.slice(0,-2), m=+d.slice(-2);
+  if(h>23||m>59) return null;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+function horaOk(w){
+  const t=horaParse(document.getElementById('ti-'+w).value);
+  if(!t){ toast('Hora inválida: escribila así, 2140','er'); return; }
+  const ahora=hMin(nowTime());
+  const hace=(ahora-hMin(t)+1440)%1440; // minutos desde esa hora (contempla medianoche)
+  // En una ruta nueva no puede ser una hora futura. Al editar una ruta vieja no se compara con la hora actual.
+  if(!editId){
+    if(hace>12*60){ toast(`${t} es una hora posterior a la actual`,'er'); return; }
+    if(w==='ini' && hace>180 && !confirm(`El inicio a las ${t} fue hace ${fmtMin(hace)}.\n¿Es correcto?`)) return;
+  }
+  const ini=w==='ini'?t:tIni, fin=w==='fin'?t:tFin;
+  if(ini && fin){
+    const dur=(hMin(fin)-hMin(ini)+1440)%1440;
+    if(dur===0){ toast('El fin no puede ser igual al inicio','er'); return; }
+    if(dur>12*60){ toast(w==='fin'?'El fin tiene que ser después del inicio':'El inicio tiene que ser antes del fin','er'); return; }
+  }
+  if(w==='ini'){
+    tIni=t; tIniManual=true;
+    document.getElementById('tv-ini').textContent=t;
+    document.getElementById('tb-ini').classList.add('set');
+  } else {
+    tFin=t; tFinManual=true;
+    document.getElementById('tv-fin').textContent=t;
+    document.getElementById('tb-fin').classList.add('set');
+  }
+  horaCerrar(w);
+  updateFormLock();
+  scheduleDraftSave();
+}
 /* ══════════════ CONTROLLER PROFILE ══════════════════════ */
 function openProfile(name){
   profCtrl=name; profPeriod='hoy';
@@ -4040,7 +4151,7 @@ function saveDraft(){
   const ruta=document.getElementById('inp-ruta')?.value||'';
   const obs =document.getElementById('inp-obs')?.value||'';
   if(!ruta&&!tIni&&!obs) return; // No guardar borrador completamente vacío
-  const draft={id_ruta:ruta, hora_ini:tIni, hora_fin:tFin, obs, empresas:{}};
+  const draft={id_ruta:ruta, hora_ini:tIni, hora_fin:tFin, ini_manual:tIniManual, fin_manual:tFinManual, obs, empresas:{}};
   loadCompanies().forEach(c=>{
     draft.empresas[c.key]={
       pi:  document.getElementById('pi-'+c.key)?.value||'',
@@ -4174,6 +4285,8 @@ function restoreDraft(){
       document.getElementById('btn-fin').disabled=true;
       document.getElementById('tb-fin').classList.add('set');
     }
+    tIniManual=!!d.ini_manual; tFinManual=!!d.fin_manual;
+    timeUI();
     if(d.empresas){
       loadCompanies().forEach(c=>{
         const em=d.empresas[c.key];
