@@ -402,6 +402,11 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
   .cq-pr .ps{white-space:normal;max-width:84px}
   .cq-pr .p{font-size:15px}
 }
+/* Semáforo 0,5 % (v5) */
+.cq-card .sem-r{color:var(--red)!important}
+.cq-card .sem-v{color:var(--grn)!important}
+.cq-hk.err.sem-v{background:rgba(22,163,74,.06);border-color:rgba(22,163,74,.25)}
+.cq-hk.err.sem-v .l,.cq-hk.err.sem-v .v{color:var(--grn)}
 .vertag{text-align:center;font-size:9.5px;color:var(--tx3);font-weight:600;margin-top:6px;letter-spacing:.3px}
 .foot{margin-top:26px;text-align:center;font-size:10px;color:var(--tx3);font-weight:600}
 
@@ -619,7 +624,7 @@ let rangeFrom=null, rangeTo=null, rankMetric='bultos';
 let tableSearch='';
 let recsReady=false;
 let donutChart=null, lineChart=null, barChart=null;
-const VER='v4 · detalle total clientes';
+const VER='v5 · semáforo de error 0,5 %';
 let vkmData={}, cqChart=null;
 
 const PERIODS=[{k:'hoy',l:'Hoy'},{k:'semana',l:'Semana'},{k:'mes',l:'Mes'},{k:'rango',l:'Rango'},{k:'todo',l:'Todo'}];
@@ -1341,6 +1346,9 @@ function cqSelTab(k){ cqTab=k; renderCalidad(); }
 let cqOrd='pct'; // orden de preparadores: 'pct' (% de error) o 'cant' (bultos con error)
 function cqSetOrd(o){ cqOrd=o; renderCalidad(); }
 const CQ_TOT='__total';
+// Semáforo: error de preparación arriba de 0,5 % (efectividad abajo de 99,5 %) va en rojo; si no, en verde
+const CQ_META=0.5;
+function cqSem(e,b){ return b?(Math.round(e/b*10000)/100>CQ_META?'sem-r':'sem-v'):''; }
 function cqEf(e,b){ return b?((1-e/b)*100).toFixed(2).replace('.',',')+' %':'—'; }
 function cqDelta(C,P,R){
   if(P && P.b){
@@ -1412,13 +1420,13 @@ function cqPerfHTML(porCuenta,T){
     return `<div class="cqp-row cu${c.key===cqTab?' sel':''}" onclick="cqSelTab('${c.key}')" title="Ver el detalle de ${cqEsc(c.name)}">
       <div class="cqp-nm"><i style="background:${c.color||'#166534'}"></i><span>${cqEsc(c.name)}<small class="cqp-mob">${ok?`${cqN(C.e)} de ${cqN(C.b)} · ${cqEf(C.e,C.b)}`:''}</small></span></div>
       <div class="cqp-n r">${ok?cqN(C.b):'—'}</div><div class="cqp-n r">${cqN(C.e)}</div>
-      ${barra}<div class="cqp-p r${peor?' f':''}">${ok?cqPct(C.e,C.b):'—'}</div><div class="cqp-n r cqp-ef">${ok?cqEf(C.e,C.b):'—'}</div></div>`;
+      ${barra}<div class="cqp-p r ${ok?cqSem(C.e,C.b):''}">${ok?cqPct(C.e,C.b):'—'}</div><div class="cqp-n r cqp-ef ${ok?cqSem(C.e,C.b):''}">${ok?cqEf(C.e,C.b):'—'}</div></div>`;
   };
   const total=multi?`<div class="cqp-row tot cu${cqTab===CQ_TOT?' sel':''}" onclick="cqSelTab('${CQ_TOT}')" title="Ver el detalle de todas las cuentas">
       <div class="cqp-nm"><span>Total<small class="cqp-mob">${cqN(T.e)} de ${cqN(T.b)} · ${cqEf(T.e,T.b)}</small></span></div>
       <div class="cqp-n r">${cqN(T.b)}</div><div class="cqp-n r">${cqN(T.e)}</div>
       <div class="cqp-tr"><div class="cqp-fl" style="width:${ancho(tot)}%;background:#4a7059"></div></div>
-      <div class="cqp-p r">${cqPct(T.e,T.b)}</div><div class="cqp-n r cqp-ef">${cqEf(T.e,T.b)}</div></div>`:'';
+      <div class="cqp-p r ${cqSem(T.e,T.b)}">${cqPct(T.e,T.b)}</div><div class="cqp-n r cqp-ef ${cqSem(T.e,T.b)}">${cqEf(T.e,T.b)}</div></div>`:'';
   return `<div class="cqp-row cqp-hd"><div>Cuenta</div><div class="r">Bultos</div><div class="r">Errores</div><div></div><div class="r">% error</div><div class="r cqp-ef">Efectividad</div></div>
     ${ord.map(fila).join('')}${total}`;
 }
@@ -1429,7 +1437,7 @@ function renderCalidad(){
   const T=cqCalcular(R.cur,comps.map(c=>c.key)), TP=R.prev?cqCalcular(R.prev,comps.map(c=>c.key)):null;
   const base=R.cur?(R.cur[0].getTime()===R.cur[1].getTime()?`Jornada ${fmtDate(R.cur[0])}`:`Jornadas ${fmtShort(R.cur[0])} → ${fmtShort(R.cur[1])}`):'Todo el historial';
   document.getElementById('cq-sub').textContent=`${compFilter?compName(compFilter):'Todas las cuentas'} · ${base} · bultos con diferencia ÷ bultos pickeados (VKM)${ctrlFilter?' · el filtro de controlador no se aplica acá':''}`;
-  document.getElementById('cq-lead').innerHTML=T.reps.length?`Error <b class="cq-lead-e">${cqPct(T.e,T.b)}</b> · efectividad <b>${cqEf(T.e,T.b)}</b>`:'Sin informes de VKM';
+  document.getElementById('cq-lead').innerHTML=T.reps.length?`Error <b class="${cqSem(T.e,T.b)}">${cqPct(T.e,T.b)}</b> · efectividad <b class="${cqSem(T.e,T.b)}">${cqEf(T.e,T.b)}</b>`:'Sin informes de VKM';
   if(body.style.display==='none') return; // cerrada: solo la línea de resumen
   if(cqChart){ cqChart.destroy(); cqChart=null; }
   if(cqTot){ cqTot.destroy(); cqTot=null; }
@@ -1449,9 +1457,9 @@ function renderCalidad(){
   // ── Calidad total: número grande de error + efectividad + bultos con error
   const dTxt=TP&&TP.b?cqDeltaTxt(R):'';
   const heroH=`<div class="cq-hero">
-      <div class="cq-hk err"><div class="l">Error de preparación</div><div class="v num">${cqPct(T.e,T.b)}</div>
+      <div class="cq-hk err ${cqSem(T.e,T.b)}"><div class="l">Error de preparación</div><div class="v num">${cqPct(T.e,T.b)}</div>
         <div class="x">${cqDelta(T,TP,R)}${dTxt?`<span class="dl">${dTxt}</span>`:''}</div></div>
-      <div class="cq-hk"><div class="l">Efectividad</div><div class="v num">${cqEf(T.e,T.b)}</div>
+      <div class="cq-hk"><div class="l">Efectividad</div><div class="v num ${cqSem(T.e,T.b)}">${cqEf(T.e,T.b)}</div>
         <div class="x">Bultos bien preparados</div></div>
       <div class="cq-hk"><div class="l">Bultos con error</div><div class="v num">${cqN(T.e)}</div>
         <div class="x"><span>de ${cqN(T.b)} pickeados · sobra <span class="s">${cqN(T.s)}</span>, falta <span class="f">${cqN(T.f)}</span></span></div></div>
@@ -1467,10 +1475,10 @@ function renderCalidad(){
   // ── Resumen por cuenta (tabla)
   const filas=porCuenta.map(({c,C,P})=>`<tr class="cu${c.key===cqTab?' sel':''}" onclick="cqSelTab('${c.key}')">
       <td class="nm"><i style="background:${c.color||'#166534'}"></i>${cqEsc(c.name)}</td>
-      <td class="p">${C.reps.length?cqPct(C.e,C.b):'—'}</td><td>${C.reps.length?cqDelta(C,P,R):''}</td>
+      <td class="p ${C.reps.length?cqSem(C.e,C.b):''}">${C.reps.length?cqPct(C.e,C.b):'—'}</td><td>${C.reps.length?cqDelta(C,P,R):''}</td>
       <td>${cqN(C.e)}</td><td class="s">${cqN(C.s)}</td><td class="f">${cqN(C.f)}</td><td>${C.reps.length?cqN(C.b):'—'}</td>
       <td>${C.diasInf.size} de ${C.jornadas.size}</td></tr>`).join('');
-  const tot=porCuenta.length>1?`<tr class="tot"><td>Total</td><td class="p">${cqPct(T.e,T.b)}</td><td>${cqDelta(T,TP,R)}</td>
+  const tot=porCuenta.length>1?`<tr class="tot"><td>Total</td><td class="p ${cqSem(T.e,T.b)}">${cqPct(T.e,T.b)}</td><td>${cqDelta(T,TP,R)}</td>
       <td>${cqN(T.e)}</td><td class="s">${cqN(T.s)}</td><td class="f">${cqN(T.f)}</td><td>${cqN(T.b)}</td><td></td></tr>`:'';
   const tablaH=`<div class="cq-box" style="margin-top:12px"><div class="chart-title" style="font-size:12px">Resumen por cuenta</div><div class="chart-sub">Comparación con el período anterior, sobra y falta, y jornadas con informe</div>
       <div class="cq-tw"><table class="cq-sum"><tr><th>Cuenta</th><th>% error</th><th>vs. anterior</th><th>Con error</th><th>Sobra</th><th>Falta</th><th>Pickeados</th><th>Jornadas c/ informe</th></tr>${filas}${tot}</table></div></div>`;
@@ -1494,7 +1502,7 @@ function renderCalidad(){
     const kH=`<div class="cq-dk">
         <div><span class="l">Bultos pickeados</span><span class="v num">${cqN(C.b)}</span></div>
         <div><span class="l">Bultos con error</span><span class="v num">${cqN(C.e)}</span><span class="x">sobra <b class="s">${cqN(C.s)}</b> · falta <b class="f">${cqN(C.f)}</b></span></div>
-        <div><span class="l">% de error</span><span class="v num e">${cqPct(C.e,C.b)}</span><span class="x">efectividad ${cqEf(C.e,C.b)}</span></div>
+        <div><span class="l">% de error</span><span class="v num ${cqSem(C.e,C.b)}">${cqPct(C.e,C.b)}</span><span class="x">efectividad <b class="${cqSem(C.e,C.b)}">${cqEf(C.e,C.b)}</b></span></div>
         <div><span class="l">Preparadores con error</span><span class="v num">${conErr.length} <small>de ${C.prep.length}</small></span><span class="x">${C.difs} ${C.difs===1?'diferencia anotada':'diferencias anotadas'}</span></div>
         <div><span class="l">Artículos con error</span><span class="v num">${C.arts.length}</span><span class="x">${C.diasInf.size} ${C.diasInf.size===1?'jornada':'jornadas'} con informe</span></div>
       </div>`;
