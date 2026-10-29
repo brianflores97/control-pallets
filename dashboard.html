@@ -180,6 +180,23 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
   vertical-align:bottom;font-weight:500;color:var(--tx2);font-variant-numeric:normal}
 .dt-z{color:var(--tx3)}
 .dt-empty{text-align:center;padding:30px;color:var(--tx3);font-weight:600}
+/* Columna Control (v6) */
+.dt-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.5}
+.dt-pill.ok{background:rgba(22,163,74,.1);color:#15803d}
+.dt-pill.sob{background:rgba(22,163,74,.1);color:#15803d}
+.dt-pill.fal{background:rgba(220,38,38,.09);color:#b91c1c}
+.dt-ctl{cursor:pointer;user-select:none}
+.dt-ctl:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
+.dt-ctl .n{color:var(--tx3);font-size:11px;font-weight:600;margin-left:4px}
+.dtable tbody tr.dt-open td{background:var(--sf2)}
+.dtable tbody tr.dt-drow td{background:var(--sf3);white-space:normal;padding:10px 14px 12px}
+.dtable tbody tr.dt-drow:hover td{background:var(--sf3)}
+.dt-dg{display:grid;grid-template-columns:auto auto auto minmax(160px,1fr) auto;gap:5px 18px;font-size:11.5px;max-width:min(620px,calc(100vw - 110px));position:sticky;left:14px}
+@media(max-width:600px){.dt-dg{grid-template-columns:auto auto minmax(0,1fr) auto;gap:5px 10px}.dt-dg .k{display:none}}
+.dt-dg .h{color:var(--tx3);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.dt-dg .c{display:inline-flex;align-items:center;gap:6px}
+.dt-dg .c i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dt-dg .r{text-align:right;font-weight:800}
 
 /* ══ HERO ══ */
 .hero{
@@ -624,7 +641,7 @@ let rangeFrom=null, rangeTo=null, rankMetric='bultos';
 let tableSearch='';
 let recsReady=false;
 let donutChart=null, lineChart=null, barChart=null;
-const VER='v5 · semáforo de error 0,5 %';
+const VER='v6 · faltante y sobrante por ruta';
 let vkmData={}, cqChart=null;
 
 const PERIODS=[{k:'hoy',l:'Hoy'},{k:'semana',l:'Semana'},{k:'mes',l:'Mes'},{k:'rango',l:'Rango'},{k:'todo',l:'Todo'}];
@@ -855,25 +872,64 @@ function toggleTable(){
   body.style.display=open?'block':'none';
   arrow.classList.toggle('open',open);
 }
+/* ── Diferencias que anotó el controlador (v6) ──
+   rec.diferencias: [{emp, prep, cod, desc, cant}]; cant>0 sobra, cant<0 falta.
+   Registros viejos sin diferencias: se usa rec.preparadores [{nombre, cantidad}] (sin cuenta). */
+const dtOpen=new Set();
+function dtKey(r){ return String(r.id||r.ts||((r.id_ruta||'')+'|'+(r.fecha||''))); }
+function dtDifs(r){
+  const lista=cqLista(r.diferencias);
+  if(lista.length) return lista.filter(d=>!compFilter||d.emp===compFilter)
+    .map(d=>({emp:d.emp,prep:d.prep||'',cod:d.cod||'',desc:d.desc||'',cant:Number(d.cant)||0}));
+  if(compFilter) return [];
+  return cqLista(r.preparadores).filter(p=>Number(p.cantidad))
+    .map(p=>({emp:'',prep:p.nombre||'',cod:'',desc:'',cant:Number(p.cantidad)||0}));
+}
+function dtTot(list){ let s=0,f=0; list.forEach(d=>{ if(d.cant>0) s+=d.cant; else f-=d.cant; }); return {s,f,n:list.length}; }
+function dtColor(k){ const c=companyList().find(c=>c.key===k); return c&&c.color?c.color:'var(--tx3)'; }
+function dtToggle(k){ if(dtOpen.has(k)) dtOpen.delete(k); else dtOpen.add(k); renderTable(); }
+function dtCtlCell(r,list,key){
+  const t=dtTot(list);
+  if(!t.n) return `<td><span class="dt-pill ok">✓ Completa</span></td>`;
+  const open=dtOpen.has(key);
+  return `<td class="dt-ctl" tabindex="0" role="button" aria-expanded="${open}" title="Ver artículos"
+    onclick="dtToggle('${cqEsc(key)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dtToggle('${cqEsc(key)}')}">`+
+    `${t.s?`<span class="dt-pill sob">Sobra ${t.s}</span> `:''}${t.f?`<span class="dt-pill fal">Falta ${t.f}</span>`:''}`+
+    `<span class="n">${t.n} art. ${open?'▾':'▸'}</span></td>`;
+}
+function dtDetalle(list){
+  const filas=list.map(d=>{
+    const pos=d.cant>0;
+    return `<span class="c">${d.emp?`<i style="background:${dtColor(d.emp)}"></i>${cqEsc(compName(d.emp))}`:'<span class="dt-z">—</span>'}</span>`+
+      `<span>${cqEsc(d.prep)||'<span class="dt-z">—</span>'}</span>`+
+      `<span class="k">${cqEsc(d.cod)||'<span class="dt-z">—</span>'}</span>`+
+      `<span style="font-weight:500">${cqEsc(d.desc)||'<span class="dt-z">—</span>'}</span>`+
+      `<span class="r" style="color:${pos?'var(--grn)':'var(--red)'}">${pos?'+':'−'}${Math.abs(d.cant)}</span>`;
+  }).join('');
+  return `<tr class="dt-drow"><td colspan="11"><div class="dt-dg">`+
+    `<span class="h">Cuenta</span><span class="h">Preparador</span><span class="h k">Código</span><span class="h">Artículo</span><span class="h" style="text-align:right">Bultos</span>`+
+    `${filas}</div></td></tr>`;
+}
 function renderTable(){
   const head=document.getElementById('dt-head'), body=document.getElementById('dt-body');
   if(!head||!body) return;
   const sc=compFilter?' '+compName(compFilter):'';
   head.innerHTML=`<tr><th>Fecha</th><th>ID Ruta</th><th>Controlador</th><th>Inicio</th><th>Fin</th>
-    <th>Duración</th><th>PI${sc}</th><th>SA${sc}</th><th>Bultos${sc}</th><th>Observaciones</th></tr>`;
+    <th>Duración</th><th>PI${sc}</th><th>SA${sc}</th><th>Bultos${sc}</th><th>Control${sc}</th><th>Observaciones</th></tr>`;
   const rows=getTableRows();
   document.getElementById('table-sub').textContent=`${rows.length} registro${rows.length!==1?'s':''} · ${activeLabel()}`;
   if(!rows.length){
-    body.innerHTML=`<tr><td colspan="10" class="dt-empty">Sin registros para los filtros actuales</td></tr>`;
+    body.innerHTML=`<tr><td colspan="11" class="dt-empty">Sin registros para los filtros actuales</td></tr>`;
     return;
   }
   body.innerHTML=rows.map(r=>{
     const t=rowTotals(r);
+    const key=dtKey(r), difs=dtDifs(r), abierta=difs.length&&dtOpen.has(key);
     const dur=calcMin(r.hora_ini,r.hora_fin);
     const obs=r.obs
       ? `<span class="dt-obs" title="${(r.obs||'').replace(/"/g,'&quot;')}">${r.obs}</span>`
       : '<span class="dt-z">—</span>';
-    return `<tr>
+    return `<tr${abierta?' class="dt-open"':''}>
       <td>${r.fecha}</td>
       <td style="font-weight:800">${r.id_ruta||''}</td>
       <td style="font-variant-numeric:normal">${r.ctrl||''}</td>
@@ -883,8 +939,9 @@ function renderTable(){
       <td class="${t.pi?'':'dt-z'}">${t.pi}</td>
       <td class="${t.sa?'':'dt-z'}">${t.sa}</td>
       <td style="color:${t.bultos?'var(--ylw)':'var(--tx3)'};font-weight:700">${t.bultos}</td>
+      ${dtCtlCell(r,difs,key)}
       <td>${obs}</td>
-    </tr>`;
+    </tr>${abierta?dtDetalle(difs):''}`;
   }).join('');
 }
 function exportExcel(){
@@ -904,17 +961,20 @@ function doExport(){
   const comps=companyList();
   const compHeaders=comps.flatMap(c=>[`PI ${c.name}`,`SA ${c.name}`,`Bultos ${c.name}`]);
   const header=['Fecha','ID Ruta','Controlador','Hora Inicio','Hora Fin','Duración (min)',
-    ...compHeaders,'Observaciones','Preparadores'];
+    ...compHeaders,'Control','Sobra','Falta','Artículos con diferencia','Observaciones','Preparadores'];
   const data=rows.map(r=>{
     const dur=calcMin(r.hora_ini,r.hora_fin);
     const compData=comps.flatMap(c=>[Number(r[c.key+'_pi'])||0,Number(r[c.key+'_sa'])||0,Number(r[c.key+'_bultos'])||0]);
     const preps=(r.preparadores||[]).map(p=>`${p.nombre} ${p.cantidad>0?'+':''}${p.cantidad}`).join(' | ');
-    return [r.fecha,r.id_ruta||'',r.ctrl||'',r.hora_ini||'',r.hora_fin||'',dur||'',...compData,r.obs||'',preps];
+    const dl=dtDifs(r), dt=dtTot(dl);
+    const ctl=!dt.n?'Completa':[dt.s?`Sobra ${dt.s}`:'',dt.f?`Falta ${dt.f}`:''].filter(Boolean).join(' / ');
+    const arts=dl.map(d=>[d.emp?compName(d.emp):'',d.prep,d.cod,d.desc,(d.cant>0?'+':'')+d.cant].filter(Boolean).join(' ')).join(' | ');
+    return [r.fecha,r.id_ruta||'',r.ctrl||'',r.hora_ini||'',r.hora_fin||'',dur||'',...compData,ctl,dt.s,dt.f,arts,r.obs||'',preps];
   });
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet([header,...data]);
   ws['!cols']=[{wch:12},{wch:10},{wch:18},{wch:10},{wch:10},{wch:14},
-    ...comps.flatMap(()=>[{wch:13},{wch:13},{wch:13}]),{wch:32},{wch:30}];
+    ...comps.flatMap(()=>[{wch:13},{wch:13},{wch:13}]),{wch:18},{wch:8},{wch:8},{wch:48},{wch:32},{wch:30}];
   XLSX.utils.book_append_sheet(wb,ws,'Detalle');
   const label=(period==='rango'&&rangeFrom&&rangeTo)?`${dateToYmd(rangeFrom)}_a_${dateToYmd(rangeTo)}`
     : specificDate?specificDate.replace(/\//g,'-')
