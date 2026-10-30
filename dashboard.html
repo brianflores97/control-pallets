@@ -185,6 +185,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .dt-pill.ok{background:rgba(22,163,74,.1);color:#15803d}
 .dt-pill.sob{background:rgba(22,163,74,.1);color:#15803d}
 .dt-pill.fal{background:rgba(220,38,38,.09);color:#b91c1c}
+.dt-pill.sin{background:var(--sf3);color:var(--tx3)}
 .dt-ctl{cursor:pointer;user-select:none}
 .dt-ctl:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
 .dt-ctl .n{color:var(--tx3);font-size:11px;font-weight:600;margin-left:4px}
@@ -641,7 +642,7 @@ let rangeFrom=null, rangeTo=null, rankMetric='bultos';
 let tableSearch='';
 let recsReady=false;
 let donutChart=null, lineChart=null, barChart=null;
-const VER='v6 · faltante y sobrante por ruta';
+const VER='v7 · Excel con informe de calidad';
 let vkmData={}, cqChart=null;
 
 const PERIODS=[{k:'hoy',l:'Hoy'},{k:'semana',l:'Semana'},{k:'mes',l:'Mes'},{k:'rango',l:'Rango'},{k:'todo',l:'Todo'}];
@@ -888,9 +889,9 @@ function dtDifs(r){
 function dtTot(list){ let s=0,f=0; list.forEach(d=>{ if(d.cant>0) s+=d.cant; else f-=d.cant; }); return {s,f,n:list.length}; }
 function dtColor(k){ const c=companyList().find(c=>c.key===k); return c&&c.color?c.color:'var(--tx3)'; }
 function dtToggle(k){ if(dtOpen.has(k)) dtOpen.delete(k); else dtOpen.add(k); renderTable(); }
-function dtCtlCell(r,list,key){
+function dtCtlCell(r,list,key,bultos){
   const t=dtTot(list);
-  if(!t.n) return `<td><span class="dt-pill ok">✓ Completa</span></td>`;
+  if(!t.n) return bultos?`<td><span class="dt-pill ok">✓ Completa</span></td>`:`<td><span class="dt-pill sin">Sin bultos</span></td>`;
   const open=dtOpen.has(key);
   return `<td class="dt-ctl" tabindex="0" role="button" aria-expanded="${open}" title="Ver artículos"
     onclick="dtToggle('${cqEsc(key)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dtToggle('${cqEsc(key)}')}">`+
@@ -939,47 +940,389 @@ function renderTable(){
       <td class="${t.pi?'':'dt-z'}">${t.pi}</td>
       <td class="${t.sa?'':'dt-z'}">${t.sa}</td>
       <td style="color:${t.bultos?'var(--ylw)':'var(--tx3)'};font-weight:700">${t.bultos}</td>
-      ${dtCtlCell(r,difs,key)}
+      ${dtCtlCell(r,difs,key,t.bultos)}
       <td>${obs}</td>
     </tr>${abierta?dtDetalle(difs):''}`;
   }).join('');
 }
-function exportExcel(){
-  if(typeof XLSX==='undefined'){
-    const s=document.createElement('script');
-    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    s.onload=doExport;
-    s.onerror=()=>alert('No se pudo cargar la librería de Excel. Probá con conexión a internet.');
-    document.head.appendChild(s);
-    return;
-  }
-  doExport();
-}
-function doExport(){
-  const rows=getTableRows();
-  if(!rows.length){ alert('No hay registros para exportar con los filtros actuales.'); return; }
-  const comps=companyList();
-  const compHeaders=comps.flatMap(c=>[`PI ${c.name}`,`SA ${c.name}`,`Bultos ${c.name}`]);
-  const header=['Fecha','ID Ruta','Controlador','Hora Inicio','Hora Fin','Duración (min)',
-    ...compHeaders,'Control','Sobra','Falta','Artículos con diferencia','Observaciones','Preparadores'];
-  const data=rows.map(r=>{
-    const dur=calcMin(r.hora_ini,r.hora_fin);
-    const compData=comps.flatMap(c=>[Number(r[c.key+'_pi'])||0,Number(r[c.key+'_sa'])||0,Number(r[c.key+'_bultos'])||0]);
-    const preps=(r.preparadores||[]).map(p=>`${p.nombre} ${p.cantidad>0?'+':''}${p.cantidad}`).join(' | ');
-    const dl=dtDifs(r), dt=dtTot(dl);
-    const ctl=!dt.n?'Completa':[dt.s?`Sobra ${dt.s}`:'',dt.f?`Falta ${dt.f}`:''].filter(Boolean).join(' / ');
-    const arts=dl.map(d=>[d.emp?compName(d.emp):'',d.prep,d.cod,d.desc,(d.cant>0?'+':'')+d.cant].filter(Boolean).join(' ')).join(' | ');
-    return [r.fecha,r.id_ruta||'',r.ctrl||'',r.hora_ini||'',r.hora_fin||'',dur||'',...compData,ctl,dt.s,dt.f,arts,r.obs||'',preps];
+/* ══════════ EXPORTAR EXCEL (v7) ══════════
+   Un archivo con dos hojas:
+   · Calidad: informe de calidad de preparación del período y la cuenta elegidos (misma cuenta que la sección Calidad).
+   · Registros: la tabla Detalle de registros con los filtros actuales.
+   Se arma con ExcelJS para poder darle formato. */
+function cargarExcelJS(){
+  return new Promise((ok,mal)=>{
+    if(window.ExcelJS) return ok();
+    const urls=['https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js',
+                'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js'];
+    const prueba=i=>{
+      if(i>=urls.length) return mal(new Error('sin ExcelJS'));
+      const s=document.createElement('script'); s.src=urls[i];
+      s.onload=()=>window.ExcelJS?ok():prueba(i+1); s.onerror=()=>prueba(i+1);
+      document.head.appendChild(s);
+    };
+    prueba(0);
   });
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.aoa_to_sheet([header,...data]);
-  ws['!cols']=[{wch:12},{wch:10},{wch:18},{wch:10},{wch:10},{wch:14},
-    ...comps.flatMap(()=>[{wch:13},{wch:13},{wch:13}]),{wch:18},{wch:8},{wch:8},{wch:48},{wch:32},{wch:30}];
-  XLSX.utils.book_append_sheet(wb,ws,'Detalle');
+}
+let xlOcupado=false;
+async function exportExcel(){
+  if(xlOcupado) return;
+  const btn=document.querySelector('.btn-excel'), txt=btn?btn.textContent:'';
+  xlOcupado=true; if(btn){ btn.textContent='Armando Excel…'; btn.style.opacity='.7'; }
+  try{
+    await cargarExcelJS();
+    await doExport();
+  }catch(e){
+    console.error(e);
+    alert('No se pudo armar el Excel. Revisá la conexión a internet y probá de nuevo.');
+  }finally{
+    xlOcupado=false; if(btn){ btn.textContent=txt; btn.style.opacity=''; }
+  }
+}
+
+const XC={osc:'FF0F3D24',verde:'FF166534',v2:'FF16A34A',rojo:'FFDC2626',gris:'FF6B8577',gris2:'FF9AB3A3',
+  fondo:'FFF4F7F5',fondo2:'FFE8F1EB',borde:'FFDDE8E0',borde2:'FFEEF3EF',tx:'FF0F2419',blanco:'FFFFFFFF',
+  claro:'FFBFE3CB',naranja:'FFC2410C',barra:'FFE57373'};
+const XNUM='#,##0', XPCT='0.00%';
+function xArgb(hex){ const h=String(hex||'').replace('#','').trim(); return /^[0-9a-f]{6}$/i.test(h)?'FF'+h.toUpperCase():XC.gris; }
+function xF(o={}){ return {name:'Arial',size:10,color:{argb:XC.tx},...o,color:{argb:(o.color||XC.tx)}}; }
+function xNumOTexto(v){ const s=String(v==null?'':v).trim(); return /^\d{1,15}$/.test(s)?Number(s):s; }
+function xHoy(){ const d=new Date(); return `${fmtDate(d)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function xPeriodoTxt(R){
+  if(!R.cur) return 'Todo el historial';
+  if(R.cur[0].getTime()===R.cur[1].getTime()) return `Jornada ${fmtDate(R.cur[0])}`;
+  if(!specificDate && period==='semana') return `Últimas 7 jornadas · del ${fmtDate(R.cur[0])} al ${fmtDate(R.cur[1])}`;
+  if(!specificDate && period==='mes') return `Últimas 30 jornadas · del ${fmtDate(R.cur[0])} al ${fmtDate(R.cur[1])}`;
+  return `Del ${fmtDate(R.cur[0])} al ${fmtDate(R.cur[1])}`;
+}
+// Diferencias de cada preparador (solo jornadas y cuentas con informe VKM, igual que el %)
+function xDifsPorPrep(rango,emps){
+  const en=cqEn(rango), con=new Set();
+  Object.keys(vkmData||{}).forEach(k=>{ const f=cqKeyToFecha(k); if(!en(f)) return;
+    emps.forEach(e=>{ if(vkmData[k]&&vkmData[k][e]) con.add(f+'|'+e); }); });
+  const out={};
+  allRecs.forEach(r=>{
+    if(!r||!en(r.fecha)) return;
+    cqLista(r.diferencias).filter(d=>emps.includes(d.emp)&&con.has(r.fecha+'|'+d.emp)).forEach(d=>{
+      (out[cqNorm(d.prep)]=out[cqNorm(d.prep)]||[]).push({fecha:r.fecha,ruta:r.id_ruta||'',ctrl:r.ctrl||'',emp:d.emp,
+        cod:d.cod||'',desc:d.desc||'',cant:Number(d.cant)||0});
+    });
+  });
+  Object.values(out).forEach(l=>l.sort((a,b)=>(Math.abs(b.cant)-Math.abs(a.cant))||(parseFecha(a.fecha)-parseFecha(b.fecha))));
+  return out;
+}
+
+// ── Hoja Calidad
+function xHojaCalidad(wb){
+  const R=cqRangos();
+  const comps=compFilter?companyList().filter(c=>c.key===compFilter):companyList();
+  const keys=comps.map(c=>c.key);
+  const T=cqCalcular(R.cur,keys);
+  const porCuenta=comps.map(c=>({c,C:cqCalcular(R.cur,[c.key])})).filter(x=>x.C.reps.length||x.C.difs);
+  const DP=xDifsPorPrep(R.cur,keys);
+  const varios=!R.cur||R.cur[0].getTime()!==R.cur[1].getTime();
+  const alcance=compFilter?compName(compFilter):'Total clientes';
+
+  const ws=wb.addWorksheet('Calidad',{views:[{showGridLines:false}],
+    pageSetup:{paperSize:9,orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0,
+      margins:{left:.35,right:.35,top:.4,bottom:.6,header:.2,footer:.25}},
+    headerFooter:{oddFooter:'&L&"Arial"&8Informe de calidad · Control Pallets&R&"Arial"&8Página &P de &N'}});
+  ws.columns=[2,6,19,16,11,8,8,8,12,16,11,12,13,2].map(width=>({width}));
+  const COLS=13; // B..M
+  const cel=(r,c)=>ws.getCell(r,c);
+  const alto=(r,h)=>{ ws.getRow(r).height=h; };
+  const put=(r,c,v,font,o={})=>{
+    if(o.hasta) ws.mergeCells(r,c,o.filaHasta||r,o.hasta);
+    const x=cel(r,c); x.value=v; x.font=xF(font);
+    if(o.fmt) x.numFmt=o.fmt;
+    x.alignment={horizontal:o.al||'left',vertical:'middle',indent:(o.al&&o.al!=='left')?0:(o.indent??1),wrapText:!!o.wrap};
+    return x;
+  };
+  const relleno=(r1,c1,r2,c2,argb)=>{ for(let r=r1;r<=r2;r++) for(let c=c1;c<=c2;c++) cel(r,c).fill={type:'pattern',pattern:'solid',fgColor:{argb}}; };
+  const semaforo=ref=>{
+    const a=ref.split(':')[0];
+    ws.addConditionalFormatting({ref,rules:[
+      {type:'expression',priority:1,formulae:[`AND(ISNUMBER(${a}),ROUND(${a},4)>0.005)`],style:{font:{color:{argb:XC.rojo}}}},
+      {type:'expression',priority:2,formulae:[`AND(ISNUMBER(${a}),ROUND(${a},4)<=0.005)`],style:{font:{color:{argb:XC.v2}}}}]});
+  };
+  const barras=ref=>ws.addConditionalFormatting({ref,rules:[{type:'dataBar',priority:3,minLength:0,maxLength:100,gradient:true,showValue:false,
+    cfvo:[{type:'num',value:0},{type:'max'}],color:{argb:XC.barra}}]});
+  const seccion=(r,t,sub)=>{
+    put(r,2,t,{size:13,bold:true,color:XC.osc},{indent:0});
+    if(sub) put(r,6,sub,{size:9,italic:true,color:XC.gris},{indent:0});
+    for(let c=2;c<=COLS;c++) cel(r,c).border={bottom:{style:'medium',color:{argb:XC.verde}}};
+    alto(r,24);
+  };
+  const cab=(r,cols)=>{
+    cols.forEach(([c,t,al,hasta])=>{
+      if(hasta) ws.mergeCells(r,c,r,hasta);
+      const x=cel(r,c); x.value=t; x.font=xF({size:8.5,bold:true,color:XC.blanco});
+      x.alignment={horizontal:al,vertical:'middle',indent:al==='left'?1:0};
+      relleno(r,c,r,hasta||c,XC.verde);
+    });
+    alto(r,20);
+  };
+  const lineaFila=(r,i,argbBorde=XC.borde)=>{
+    for(let c=2;c<=COLS;c++){ cel(r,c).border={bottom:{style:'thin',color:{argb:argbBorde}}}; }
+    if(i%2) relleno(r,2,r,COLS,XC.fondo);
+  };
+  const f=(formula,result)=>({formula,result});
+
+  // Encabezado
+  relleno(1,1,4,14,XC.osc);
+  alto(1,8); alto(2,32); alto(3,18); alto(4,8);
+  put(2,2,'Informe de calidad de preparación',{size:20,bold:true,color:XC.blanco},{hasta:9,indent:0});
+  put(3,2,`CDR Nogués  ·  Control Pallets  ·  ${alcance}`,{size:10,color:XC.claro},{hasta:8,indent:0});
+  put(2,10,xPeriodoTxt(R),{size:11,bold:true,color:XC.blanco},{hasta:13,al:'right'});
+  put(3,9,`Generado ${xHoy()}`,{size:9,color:XC.claro},{hasta:13,al:'right'});
+
+  if(!T.reps.length){
+    put(6,2,'No hay informes de VKM cargados en este período, así que no se puede calcular el % de error.',{size:11,bold:true,color:XC.naranja},{hasta:13,indent:0});
+    put(7,2,'Se cargan desde la app: Panel supervisor → Calidad → Cargar informe VKM. Los registros del período están en la hoja Registros.',{size:9.5,color:XC.gris},{hasta:13,indent:0});
+    return ws;
+  }
+
+  // Posiciones (la tabla por cuenta va antes de los KPIs en fórmulas, así que se calcula primero dónde cae)
+  const grupos=[]; for(let i=0;i<porCuenta.length;i+=4) grupos.push(porCuenta.slice(i,i+4));
+  let r=12+(T.sinInf.length?1:0);
+  const secCuentas=r; r+=2;
+  const filasTarjeta=grupos.map(()=>{ const ini=r; r+=5; return ini; });
+  const secResumen=r; r+=2;
+  const cabRes=r; r++;
+  const ct0=r; r+=porCuenta.length;
+  const multi=porCuenta.length>1;
+  const TR=multi?r:ct0; if(multi) r++;
+  const conInfC=porCuenta.filter(x=>x.C.b);
+
+  // KPIs
+  [6,7,8,9,10].forEach((rr,i)=>alto(rr,[16,26,26,16,16][i]));
+  const tarjetas=[[2,4],[5,7],[8,10],[11,13]];
+  tarjetas.forEach(([c1,c2])=>{
+    relleno(6,c1,10,c2,XC.fondo);
+    for(let rr=6;rr<=10;rr++) cel(rr,c1).border={left:{style:'thick',color:{argb:XC.verde}}};
+  });
+  const pctTot=T.b?T.e/T.b:0;
+  put(6,2,'% DE ERROR',{size:8,bold:true,color:XC.gris},{hasta:4});
+  put(7,2,f(`IFERROR(E${TR}/D${TR},0)`,pctTot),{size:32,bold:true,color:XC.v2},{hasta:4,filaHasta:8,fmt:XPCT});
+  semaforo('B7');
+  put(9,2,`${cqN(T.e)} bultos con error de ${cqN(T.b)}`,{size:9,color:XC.gris},{hasta:4});
+  put(10,2,'Objetivo: 0,50 % o menos',{size:8,italic:true,color:XC.gris2},{hasta:4});
+  put(6,5,'EFECTIVIDAD',{size:8,bold:true,color:XC.gris},{hasta:7});
+  put(7,5,f('1-B7',1-pctTot),{size:32,bold:true,color:XC.verde},{hasta:7,filaHasta:8,fmt:XPCT});
+  put(9,5,'Bultos preparados sin diferencia',{size:9,color:XC.gris},{hasta:7});
+  put(6,8,'BULTOS PICKEADOS',{size:8,bold:true,color:XC.gris},{hasta:10});
+  put(7,8,f(`D${TR}`,T.b),{size:26,bold:true},{hasta:10,filaHasta:8,fmt:XNUM});
+  put(9,8,`Sobra ${cqN(T.s)}   ·   Falta ${cqN(T.f)}`,{size:9,bold:true,color:XC.gris},{hasta:10});
+  const conErr=T.prep.filter(p=>p.e>0);
+  put(6,11,'PREPARADORES CON ERROR',{size:8,bold:true,color:XC.gris},{hasta:13});
+  put(7,11,`${conErr.length} de ${T.prep.length}`,{size:26,bold:true},{hasta:13,filaHasta:8});
+  put(9,11,`${T.arts.length} ${T.arts.length===1?'artículo':'artículos'} con diferencia`,{size:9,bold:true,color:XC.gris},{hasta:13});
+  const nJ=T.diasInf.size;
+  put(10,11,`${nJ} ${nJ===1?'jornada':'jornadas'} con informe VKM`,{size:8,italic:true,color:XC.gris2},{hasta:13});
+  if(T.sinInf.length){
+    put(12,2,`⚠ Hay diferencias de ${T.sinInf.length===1?'una jornada':'jornadas'} sin informe de VKM (${T.sinInf.join(', ')}). No entran en el %.`,
+      {size:9.5,bold:true,color:XC.naranja},{hasta:13,indent:0});
+  }
+
+  // Tarjetas por cuenta
+  seccion(secCuentas,'Por cuenta','% de error de cada cuenta sobre sus bultos pickeados');
+  grupos.forEach((g,gi)=>{
+    const r0=filasTarjeta[gi];
+    alto(r0,18); alto(r0+1,34); alto(r0+2,16); alto(r0+3,16); alto(r0+4,8);
+    g.forEach(({c,C},k)=>{
+      const [c1,c2]=tarjetas[k], col=xArgb(c.color), fr=ct0+gi*4+k;
+      for(let rr=r0;rr<=r0+3;rr++) for(let cc=c1;cc<=c2;cc++){
+        cel(rr,cc).border={top:rr===r0?{style:'thick',color:{argb:col}}:undefined,bottom:rr===r0+3?{style:'thin',color:{argb:XC.borde}}:undefined,
+          left:cc===c1?{style:'thin',color:{argb:XC.borde}}:undefined,right:cc===c2?{style:'thin',color:{argb:XC.borde}}:undefined};
+      }
+      put(r0,c1,c.name,{size:11,bold:true,color:col},{hasta:c2});
+      if(C.b){
+        put(r0+1,c1,f(`I${fr}`,C.e/C.b),{size:24,bold:true,color:XC.v2},{hasta:c2,fmt:XPCT});
+        semaforo(cel(r0+1,c1).address);
+        put(r0+2,c1,`${cqN(C.e)} con error de ${cqN(C.b)}`,{size:9,color:XC.gris},{hasta:c2});
+        put(r0+3,c1,`Sobra ${cqN(C.s)}  ·  Falta ${cqN(C.f)}`,{size:8,color:XC.gris2},{hasta:c2});
+      } else {
+        put(r0+1,c1,'Sin informe',{size:16,bold:true,color:XC.gris2},{hasta:c2});
+        put(r0+2,c1,`${C.difs} ${C.difs===1?'diferencia anotada':'diferencias anotadas'}`,{size:9,color:XC.gris},{hasta:c2});
+        put(r0+3,c1,'No entra en el %',{size:8,color:XC.gris2},{hasta:c2});
+      }
+    });
+  });
+
+  // Tabla resumen por cuenta
+  seccion(secResumen,'Resumen por cuenta');
+  alto(secResumen+1,6);
+  cab(cabRes,[[2,'Cuenta','left',3],[4,'Bultos pickeados','right'],[5,'Con error','right'],[6,'Sobra','right'],[7,'Falta','right'],
+    [8,'','right'],[9,'% de error','right'],[10,'','left'],[11,'% del error','right'],[12,'Efectividad','right',13]]);
+  porCuenta.forEach(({c,C},i)=>{
+    const rr=ct0+i;
+    ws.mergeCells(rr,2,rr,3); ws.mergeCells(rr,12,rr,13);
+    put(rr,2,c.name,{bold:true,color:xArgb(c.color)});
+    if(C.b){
+      put(rr,4,C.b,{},{al:'right',fmt:XNUM}); put(rr,5,C.e,{},{al:'right',fmt:XNUM});
+      put(rr,6,C.s,{color:XC.v2},{al:'right',fmt:XNUM}); put(rr,7,C.f,{color:XC.rojo},{al:'right',fmt:XNUM});
+      put(rr,9,f(`IFERROR(E${rr}/D${rr},0)`,C.e/C.b),{size:12,bold:true},{al:'right',fmt:XPCT});
+      put(rr,10,f(`IF(I${rr}>0,I${rr},"")`,C.e?C.e/C.b:''),{},{fmt:';;;'});
+      put(rr,11,f(`IFERROR(E${rr}/$E$${TR},0)`,T.e?C.e/T.e:0),{color:XC.gris},{al:'right',fmt:'0%'});
+      put(rr,12,f(`1-I${rr}`,1-C.e/C.b),{color:XC.gris},{al:'right',fmt:XPCT});
+    } else {
+      put(rr,4,'Sin informe VKM',{italic:true,color:XC.naranja},{al:'right'});
+      put(rr,9,'—',{color:XC.gris2},{al:'right'});
+    }
+    lineaFila(rr,i);
+    alto(rr,19);
+  });
+  if(multi){
+    ws.mergeCells(TR,2,TR,3); ws.mergeCells(TR,12,TR,13);
+    const a=ct0,b=TR-1;
+    put(TR,2,'Total',{bold:true});
+    put(TR,4,f(`SUM(D${a}:D${b})`,T.b),{bold:true},{al:'right',fmt:XNUM});
+    put(TR,5,f(`SUM(E${a}:E${b})`,T.e),{bold:true},{al:'right',fmt:XNUM});
+    put(TR,6,f(`SUM(F${a}:F${b})`,T.s),{bold:true,color:XC.v2},{al:'right',fmt:XNUM});
+    put(TR,7,f(`SUM(G${a}:G${b})`,T.f),{bold:true,color:XC.rojo},{al:'right',fmt:XNUM});
+    put(TR,9,f(`IFERROR(E${TR}/D${TR},0)`,pctTot),{size:12,bold:true},{al:'right',fmt:XPCT});
+    put(TR,11,f(`SUM(K${a}:K${b})`,conInfC.length?1:0),{bold:true,color:XC.gris},{al:'right',fmt:'0%'});
+    put(TR,12,f(`1-I${TR}`,1-pctTot),{bold:true},{al:'right',fmt:XPCT});
+    for(let c=2;c<=COLS;c++) cel(TR,c).border={top:{style:'medium',color:{argb:XC.osc}},bottom:{style:'medium',color:{argb:XC.osc}}};
+    alto(TR,20);
+  }
+  semaforo(`I${ct0}:I${TR}`);
+  barras(`J${ct0}:J${TR-(multi?1:0)}`);
+
+  // Preparadores con errores + sus artículos
+  r+=2;
+  seccion(r,'Preparadores con errores','De mayor a menor % de error · debajo, los artículos de cada uno');
+  alto(r+1,6); r+=2;
+  cab(r,[[2,'#','center'],[3,'Preparador / artículo','left'],[4,'Bultos pickeados','right'],[5,'Con error','right'],[6,'Veces','right'],
+    [7,'Sobra','right'],[8,'Falta','right'],[9,'% de error','right'],[10,'','left'],[11,'% del error','right'],[12,varios?'Fecha · ruta · controlador':'Ruta · controlador','left',13]]);
+  r++;
+  const p0=r, filasPrep=[];
+  const ordenados=[...conErr].sort((x,y)=>(cqOrd==='cant'?(y.e-x.e)||(y.e/y.b-x.e/x.b):(y.e/y.b-x.e/x.b)||(y.e-x.e)));
+  const lista=[...ordenados.map(p=>({p,vkm:true})),...T.sinCruce.filter(p=>p.e>0).map(p=>({p,vkm:false}))];
+  const colDe=k=>xArgb((companyList().find(c=>c.key===k)||{}).color);
+  lista.forEach(({p,vkm},i)=>{
+    filasPrep.push(r);
+    ws.mergeCells(r,12,r,13);
+    put(r,2,vkm?i+1:'',{bold:true,color:XC.gris},{al:'center'});
+    put(r,3,p.n,{size:11,bold:true});
+    const det=DP[cqNorm(p.n)]||[];
+    const s=det.filter(d=>d.cant>0).reduce((t,d)=>t+d.cant,0), fa=det.filter(d=>d.cant<0).reduce((t,d)=>t-d.cant,0);
+    if(vkm){
+      put(r,4,p.b,{},{al:'right',fmt:XNUM});
+      put(r,9,f(`IFERROR(E${r}/D${r},0)`,p.b?p.e/p.b:0),{size:12,bold:true},{al:'right',fmt:XPCT});
+      put(r,10,f(`IF(I${r}>0,I${r},"")`,p.b&&p.e?p.e/p.b:''),{},{fmt:';;;'});
+      put(r,12,Object.entries(p.por||{}).map(([k,v])=>`${compName(k)} ${cqN(v)}`).join(' · '),{size:9,bold:true,color:XC.gris});
+    } else {
+      put(r,4,'—',{color:XC.gris2},{al:'right'});
+      put(r,9,'—',{color:XC.gris2},{al:'right'});
+      put(r,12,'No figura en el informe VKM',{size:9,italic:true,color:XC.naranja});
+    }
+    put(r,5,p.e,{bold:true},{al:'right',fmt:XNUM});
+    put(r,6,vkm?p.v:det.length,{},{al:'right',fmt:XNUM});
+    put(r,7,vkm?p.s:s,{color:XC.v2},{al:'right',fmt:XNUM});
+    put(r,8,vkm?p.f:fa,{color:XC.rojo},{al:'right',fmt:XNUM});
+    put(r,11,f(`IFERROR(E${r}/$E$${TR},0)`,T.e?p.e/T.e:0),{color:XC.gris},{al:'right',fmt:'0%'});
+    relleno(r,2,r,COLS,XC.fondo2);
+    for(let c=2;c<=COLS;c++) cel(r,c).border={top:{style:'thin',color:{argb:XC.verde}},bottom:{style:'thin',color:{argb:XC.borde}}};
+    alto(r,22); r++;
+    det.forEach(d=>{
+      ws.mergeCells(r,4,r,6); ws.mergeCells(r,12,r,13);
+      put(r,3,xNumOTexto(d.cod),{size:9,bold:true,color:XC.gris},{indent:2,fmt:'0'});
+      put(r,4,d.desc,{size:8.5});
+      const pos=d.cant>0;
+      put(r,pos?7:8,(pos?'+':'−')+Math.abs(d.cant),{bold:true,color:pos?XC.v2:XC.rojo},{al:'right'});
+      put(r,9,compName(d.emp),{size:9,bold:true,color:colDe(d.emp)},{al:'right'});
+      put(r,12,`${varios?d.fecha.slice(0,5)+' · ':''}${d.ruta} · ${d.ctrl}`,{size:8.5,color:XC.gris});
+      for(let c=2;c<=COLS;c++) cel(r,c).border={bottom:{style:'thin',color:{argb:XC.borde2}}};
+      alto(r,16); r++;
+    });
+  });
+  if(lista.length){
+    filasPrep.forEach(rr=>{ if(typeof cel(rr,9).value==='object') semaforo(`I${rr}`); });
+    barras(`J${p0}:J${r-1}`);
+    for(let c=2;c<=COLS;c++){ const b=cel(r-1,c).border||{}; cel(r-1,c).border={...b,bottom:{style:'medium',color:{argb:XC.osc}}}; }
+  } else {
+    put(r,2,'Ningún preparador con diferencias en este período.',{size:10,bold:true,color:XC.v2},{hasta:13,indent:0}); r++;
+  }
+  const sinErr=T.prep.filter(p=>!p.e).map(p=>p.n);
+  if(sinErr.length){
+    r++;
+    put(r,2,`Sin errores (${sinErr.length}):`,{size:10,bold:true,color:XC.v2},{hasta:3,indent:0});
+    put(r,4,sinErr.join(', '),{size:9.5,bold:true,color:XC.v2},{hasta:13,indent:0,wrap:true});
+    alto(r,Math.max(20,Math.ceil(sinErr.join(', ').length/95)*14)); r++;
+  }
+
+  // Pie
+  r++;
+  ['% de error = bultos con diferencia ÷ bultos pickeados (informe VKM). Efectividad = 100 % − % de error. Solo entran las jornadas con informe VKM.',
+   'Colores: verde hasta 0,50 % de error, rojo por encima. Las cifras son fórmulas: si corregís un dato, se recalculan.']
+    .forEach(t=>{ put(r,2,t,{size:8.5,italic:true,color:XC.gris},{hasta:13,indent:0}); r++; });
+  ws.pageSetup.printArea=`A1:N${r}`;
+  return ws;
+}
+
+// ── Hoja Registros (la tabla Detalle de registros)
+function xHojaRegistros(wb,rows){
+  const comps=companyList();
+  const ws=wb.addWorksheet('Registros',{views:[{state:'frozen',ySplit:4,showGridLines:false}],
+    pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0}});
+  const head=['Fecha','ID Ruta','Controlador','Hora inicio','Hora fin','Duración (min)',
+    ...comps.flatMap(c=>[`PI ${c.name}`,`SA ${c.name}`,`Bultos ${c.name}`]),'Control','Sobra','Falta','Artículos con diferencia','Observaciones','Preparadores'];
+  const n=head.length, nc=comps.length*3;
+  ws.columns=[12,10,18,10,10,13,...comps.flatMap(()=>[9,9,12]),15,8,8,52,32,30].map(width=>({width}));
+  ws.mergeCells(1,1,1,Math.min(n,10));
+  const t=ws.getCell(1,1); t.value='Detalle de registros'; t.font=xF({size:16,bold:true,color:XC.verde});
+  ws.mergeCells(2,1,2,Math.min(n,10));
+  const s=ws.getCell(2,1); s.value=`${rows.length} registro${rows.length!==1?'s':''} · ${activeLabel()} · generado ${xHoy()}`; s.font=xF({size:9,italic:true,color:XC.gris});
+  ws.getRow(1).height=24;
+  const hr=ws.getRow(4); hr.values=head; hr.height=22;
+  hr.eachCell((c,i)=>{ c.font=xF({size:9,bold:true,color:XC.blanco}); c.fill={type:'pattern',pattern:'solid',fgColor:{argb:XC.verde}};
+    c.alignment={horizontal:(i>=4&&i<=6+nc+3)?'right':'left',vertical:'middle',indent:1}; });
+  hr.getCell(7+nc).alignment={horizontal:'left',vertical:'middle',indent:1};
+  rows.forEach((r,k)=>{
+    const dl=dtDifs(r), dt=dtTot(dl), tb=rowTotals(r).bultos;
+    const ctl=dt.n?[dt.s?`Sobra ${dt.s}`:'',dt.f?`Falta ${dt.f}`:''].filter(Boolean).join(' / '):(tb?'Completa':'Sin bultos');
+    const arts=dl.map(d=>[d.emp?compName(d.emp):'',d.prep,d.cod,d.desc,(d.cant>0?'+':'')+d.cant].filter(Boolean).join(' ')).join(' | ');
+    const preps=(r.preparadores||[]).map(p=>`${p.nombre} ${p.cantidad>0?'+':''}${p.cantidad}`).join(' | ');
+    const fila=ws.getRow(5+k);
+    fila.values=[r.fecha,xNumOTexto(r.id_ruta),r.ctrl||'',r.hora_ini||'',r.hora_fin||'',calcMin(r.hora_ini,r.hora_fin)||'',
+      ...comps.flatMap(c=>[Number(r[c.key+'_pi'])||0,Number(r[c.key+'_sa'])||0,Number(r[c.key+'_bultos'])||0]),
+      ctl,dt.s,dt.f,arts,r.obs||'',preps];
+    fila.height=18;
+    fila.eachCell({includeEmpty:true},(c,i)=>{
+      c.font=xF({size:9.5}); c.alignment={vertical:'middle',horizontal:(i>=4&&i<=6+nc||i===8+nc||i===9+nc)?'right':'left',indent:1};
+      c.border={bottom:{style:'thin',color:{argb:XC.borde}}};
+      if(k%2) c.fill={type:'pattern',pattern:'solid',fgColor:{argb:XC.fondo}};
+      if(i>6&&i<=6+nc) c.numFmt=XNUM;
+    });
+    fila.getCell(2).font=xF({size:9.5,bold:true}); fila.getCell(2).numFmt='0'; fila.getCell(2).alignment={horizontal:'left',vertical:'middle',indent:1};
+    comps.forEach((c,j)=>{ const x=fila.getCell(9+j*3); if(x.value) x.font=xF({size:9.5,bold:true,color:'FFCA8A04'}); });
+    const cc=fila.getCell(7+nc);
+    cc.font=xF({size:9.5,bold:true,color:dt.n?(dt.f?XC.rojo:XC.v2):(tb?XC.v2:XC.gris2)});
+    fila.getCell(8+nc).font=xF({size:9.5,color:XC.v2}); fila.getCell(9+nc).font=xF({size:9.5,color:XC.rojo});
+    fila.getCell(10+nc).font=xF({size:8.5,color:XC.gris});
+    fila.getCell(11+nc).font=xF({size:9,italic:true,color:XC.gris});
+  });
+  if(rows.length) ws.autoFilter={from:{row:4,column:1},to:{row:4+rows.length,column:n}};
+  return ws;
+}
+
+async function doExport(){
+  const rows=getTableRows();
+  const wb=new ExcelJS.Workbook();
+  wb.creator='Control Pallets · dashboard'; wb.created=new Date();
+  wb.calcProperties={fullCalcOnLoad:true};
+  xHojaCalidad(wb);
+  xHojaRegistros(wb,rows);
   const label=(period==='rango'&&rangeFrom&&rangeTo)?`${dateToYmd(rangeFrom)}_a_${dateToYmd(rangeTo)}`
     : specificDate?specificDate.replace(/\//g,'-')
     : period;
-  XLSX.writeFile(wb,`Control_Pallets_${label}.xlsx`);
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`Control_Pallets_${label}${compFilter?'_'+compName(compFilter).replace(/[^\wÁÉÍÓÚáéíóúÑñ-]+/g,''):''}.xlsx`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },3000);
 }
 
 /* ══════════ RENDER ══════════ */
