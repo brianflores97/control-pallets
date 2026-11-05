@@ -133,6 +133,17 @@
   .jor .trk:focus-within .dot{box-shadow:0 0 0 3px var(--acc)}
   .jor .ticks{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--tx3)}
   .jor .tip{font-size:11.5px;color:var(--tx3);font-weight:500}
+  /* v19: escala del ciclo de despacho (14:30 del día anterior → 18:00) */
+  .jor .ticks{position:relative;display:block;height:14px}
+  .jor .ticks span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+  .jor .ticks span.ini{transform:none} .jor .ticks span.fin{transform:translateX(-100%)}
+  .jor .ticks span.dia{color:var(--tx)}
+  .jor .mk2{position:absolute;top:-4px;width:2px;height:20px;margin-left:-1px;background:var(--tx3);opacity:.55;pointer-events:none}
+  .jor .fases{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+  .jor .fz{position:relative;height:18px}
+  .jor .fz i{position:absolute;bottom:0;height:4px;border-radius:99px}
+  .jor .fz span{position:absolute;top:0;font-size:10.5px;font-weight:700;color:var(--tx3);white-space:nowrap}
+  .jor .fz.pal i{background:var(--blu)} .jor .fz.exp i{background:var(--acc)} .jor .fz.dev i{background:var(--vio)}
 
 
   /* indicadores */
@@ -308,7 +319,7 @@
         <button type="button" class="lt on" data-t="noche">Noche</button>
       </div>
       <button id="loginBtn" class="login-enter">Ingresar</button>
-      <div class="login-ver">iFlow · CDR Nogués · v18</div>
+      <div class="login-ver">iFlow · CDR Nogués · v19</div>
     </div>
   </div>
 </div>
@@ -369,9 +380,10 @@
       <button type="button" data-m="semana">Semana</button>
       <button type="button" data-m="mes">Mes</button>
     </div>
+    <div class="f">Despacho:</div>
     <div class="fnav">
       <button type="button" id="fPrev" aria-label="Anterior"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
-      <input type="date" id="fSel" aria-label="Fecha">
+      <input type="date" id="fSel" aria-label="Día de despacho">
       <button type="button" id="fNext" aria-label="Siguiente"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
     </div>
     <button type="button" class="btn-hoy" id="btnHoy">Hoy en vivo</button>
@@ -392,18 +404,25 @@
     <!-- INFORMATIVA -->
     <div id="view-informativa" class="view">
       <!-- Día: avance de la jornada, arrastrable -->
-      <section class="jor" id="secJor" aria-label="Avance de la jornada">
+      <section class="jor" id="secJor" aria-label="Avance del despacho">
         <div class="hd">
-          <h2>Avance de la jornada<small id="jorSub">arrastrá el punto para ver cómo estaba a otra hora</small></h2>
+          <h2>Avance del despacho<small id="jorSub">arrastrá el punto para ver cómo estaba a otra hora</small></h2>
           <span class="now num" id="jorNow">—</span>
         </div>
         <div class="trk">
           <div class="fill" id="jorFill"></div>
+          <div class="mk2" style="left:34.55%" title="00:00 · empieza Expedición"></div>
+          <div class="mk2" style="left:87.27%" title="14:30 · corte de Pallets"></div>
           <div class="nowmk hidden" id="jorMk"></div>
           <div class="dot" id="jorDot"></div>
-          <input type="range" id="jorRange" min="0" max="1440" step="5" value="0" aria-label="Hora de la jornada, de 14:30 a 14:30">
+          <input type="range" id="jorRange" min="0" max="1650" step="5" value="0" aria-label="Hora del despacho, de las 14:30 del día anterior a las 18:00">
         </div>
-        <div class="ticks num"><span>14:30</span><span>18:30</span><span>22:30</span><span>02:30</span><span>06:30</span><span>10:30</span><span>14:30</span></div>
+        <div class="ticks num" id="jorTicks"></div>
+        <div class="fases num" aria-hidden="true">
+          <div class="fz pal"><i style="left:0;width:87.27%"></i><span id="fzPal" style="left:0">Control Pallets</span></div>
+          <div class="fz exp"><i style="left:34.55%;width:65.45%"></i><span id="fzExp" style="left:34.55%">Expedición</span></div>
+          <div class="fz dev"><i style="left:67.27%;width:32.73%"></i><span id="fzDev" style="left:67.27%">Devoluciones</span></div>
+        </div>
       </section>
 
       <section class="kpis" aria-label="Indicadores">
@@ -593,7 +612,7 @@
     <a class="mweb" id="mWeb" target="_blank" rel="noopener">o abrir en el navegador</a>
   </div>
 </div>
-<div class="version">v18 · turno tarde</div>
+<div class="version">v19 · ciclo de despacho</div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════
@@ -773,25 +792,43 @@ const n0=v=>{const n=parseFloat(String(v==null?'':v).replace(',','.'));return is
 const miles=n=>Math.round(n||0).toLocaleString('es-AR');
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-/* la misma regla de corte que usa Pallets: antes de las 14:30 sigue la jornada de ayer */
+/* ═══ v19 · CICLO DE DESPACHO ═══
+   La fecha elegida es el día de despacho D. Cada app con su ventana:
+   - Control Pallets: jornada D-1, de 14:30 de D-1 a 14:30 de D
+   - Expedición:      día D, de 00:00 a 23:59
+   - Devoluciones:    día D, de 09:00 a 18:00
+   La barra va de las 14:30 de D-1 (T=0) a las 18:00 de D (T=1650). */
+const JMAX=1650, T_MN=570, T_CORTE=1440;
+/* regla de corte de Pallets: antes de las 14:30 sigue la jornada de ayer */
 function jornadaActualISO(){ const now=new Date(); const d=new Date(now);
   if(now.getHours()<14||(now.getHours()===14&&now.getMinutes()<30)) d.setDate(d.getDate()-1); return fISO(d); }
-/* minutos desde las 14:30 (0 = 14:30, 1440 = 14:30 del día siguiente) */
-function m1430(hhmm){ if(!hhmm) return null; const x=String(hhmm).split(':').map(Number);
-  if(x.length<2||!isFinite(x[0])||!isFinite(x[1])) return null; return ((x[0]*60+x[1])-870+1440)%1440; }
-function hastaT(hhmm,T){ const m=m1430(hhmm); return m!=null && m<=T; }
-function ahoraT(){ const d=new Date(); return m1430(p2(d.getHours())+':'+p2(d.getMinutes())); }
+/* la jornada de Pallets abierta prepara el despacho del día siguiente */
+function despachoVivoISO(){ return sumarDias(jornadaActualISO(),1); }
+function hm(hhmm){ if(!hhmm) return null; const x=String(hhmm).split(':').map(Number);
+  if(x.length<2||!isFinite(x[0])||!isFinite(x[1])) return null; return x[0]*60+x[1]; }
+/* Pallets: antes de las 14:30 ya es la madrugada/mañana del día D */
+function tPal(hhmm){ const m=hm(hhmm); return m==null? null : ((m-870+1440)%1440); }
+/* Expedición y Devoluciones: hora del día D calendario */
+function tDia(hhmm){ const m=hm(hhmm); return m==null? null : T_MN+m; }
+function hastaPal(hhmm,T){ const t=tPal(hhmm); return t!=null && t<=T; }
+function hastaDia(hhmm,T){ const t=tDia(hhmm); return t!=null && t<=T; }
+/* minutos desde las 14:30 del día anterior al despacho elegido */
+function ahoraT(){ const b=dISO(sumarDias(FSEL,-1)); b.setHours(14,30,0,0);
+  return Math.max(0,Math.min(JMAX,Math.floor((Date.now()-b.getTime())/60000))); }
 function hhmmDeT(T){ const m=(T+870)%1440; return p2(Math.floor(m/60))+':'+p2(m%60); }
+function fechaDeT(T){ return ddmm(T<T_MN? sumarDias(FSEL,-1) : FSEL); }
 
 /* estado */
-let MODO='dia', FSEL=hoyISO(), TSEL=null;   /* TSEL: minuto elegido en la barra; null = ahora / día completo */
+let MODO='dia', FSEL=despachoVivoISO(), TSEL=null;   /* TSEL: minuto elegido en la barra; null = ahora / día completo */
 const EXP={}, REC={}, MEMAT={};
 let PAL_ALL=[];
-let unsubExp=null, unsubRec=null, FSref=null, cargaId=0;
-function esVivo(){ return MODO==='dia' && FSEL===hoyISO(); }
+let unsubExp=null, unsubRec=null, SUBF=null, FSref=null, cargaId=0;
+/* en vivo: el despacho en curso, y el de hoy mientras sigan entrando devoluciones (hasta las 18:00) */
+function esVivo(){ return MODO==='dia' && (FSEL===despachoVivoISO() || (FSEL===hoyISO() && ahoraT()<JMAX)); }
+function esDespachoVivo(){ return MODO==='dia' && FSEL===despachoVivoISO(); }
 
 function rango(){
-  const hoy=hoyISO();
+  const hoy=despachoVivoISO();   /* v19: el último día elegible es el despacho en curso */
   if(MODO==='dia') return [FSEL];
   const out=[]; const d=dISO(FSEL);
   if(MODO==='semana'){ const dow=(d.getDay()+6)%7; d.setDate(d.getDate()-dow);   /* lunes */
@@ -815,14 +852,14 @@ function guardarCache(C){
 function infoCache(){ const el=document.getElementById('cacheInfo'); if(!el) return;
   const n=Object.keys(leerCache().dias).length; el.textContent=n? `Días guardados: ${n}` : 'Sin días guardados todavía.'; }
 function borrarMemoria(){ try{ localStorage.removeItem(CACHE); }catch(e){}
-  Object.keys(EXP).forEach(k=>{ if(k!==hoyISO()){ delete EXP[k]; delete REC[k]; delete MEMAT[k]; } });
+  Object.keys(EXP).forEach(k=>{ if(k!==SUBF){ delete EXP[k]; delete REC[k]; delete MEMAT[k]; } });
   infoCache(); cargar(); }
 const compExp=r=>({ruta:r.ruta, inicio:r.inicio||'', fin:r.fin||'', hcit:r.hcit||''});
 const compRec=h=>({hr:h.hr, estado:h.estado||'', inicio:h.inicio||'', fin:h.fin||'',
   pedidos:(h.pedidos||[]).map(p=>({est:p.est, bultos:p.bultos, dev:p.dev, motivo:p.motivo||'', boca:p.boca||''}))});
 
 async function bajarDia(f,C){
-  const hoy=hoyISO(), ayer=sumarDias(hoy,-1), fresco=(f===hoy||f===ayer);
+  const hoy=hoyISO(), ayer=sumarDias(hoy,-1), fresco=(f>=ayer);   /* ayer, hoy y el despacho de mañana */
   if(EXP[f] && REC[f] && (!fresco || (Date.now()-(MEMAT[f]||0))<FRESCO_TTL)) return true;
   if(!fresco && C.dias[f]){ EXP[f]=C.dias[f].exp; REC[f]=C.dias[f].rec; MEMAT[f]=Date.now(); return true; }
   if(!FSref) return false;
@@ -836,10 +873,12 @@ async function bajarDia(f,C){
   }catch(e){ console.warn('día '+f,e); if(C.dias[f]){ EXP[f]=C.dias[f].exp; REC[f]=C.dias[f].rec; return true; } return false; }
 }
 
-function pararVivo(){ if(unsubExp){unsubExp();unsubExp=null;} if(unsubRec){unsubRec();unsubRec=null;} }
-function suscribirVivo(){
-  if(!FSref || unsubExp) return;
-  const hoy=hoyISO();
+function pararVivo(){ if(unsubExp){unsubExp();unsubExp=null;} if(unsubRec){unsubRec();unsubRec=null;} SUBF=null; }
+function suscribirVivo(f){
+  if(!FSref) return;
+  if(unsubExp && SUBF===f) return;
+  pararVivo(); SUBF=f;
+  const hoy=f;   /* v19: el día de despacho elegido (hoy o el de mañana) */
   /* Expedición — Firestore jornadas/{hoy}/rutas (misma lectura que v13) */
   unsubExp=FSref.collection('jornadas').doc(hoy).collection('rutas').onSnapshot(snap=>{
     EXP[hoy]=snap.docs.map(d=>d.data()); MEMAT[hoy]=Date.now();
@@ -855,7 +894,7 @@ function suscribirVivo(){
 async function cargar(){
   const id=++cargaId;
   pintarPeriodo();
-  if(esVivo()){ suscribirVivo(); render(); return; }
+  if(MODO==='dia' && FSEL>=hoyISO()){ suscribirVivo(FSEL); render(); return; }
   pararVivo();
   const fechas=rango(), C=leerCache(), ct=document.getElementById('cargaTxt');
   let i=0;
@@ -875,14 +914,14 @@ async function cargar(){
 function expStats(rs,T){
   let fin,lleg;
   if(T==null){ fin=rs.filter(r=>r.fin).length; lleg=rs.filter(r=>r.inicio||r.fin).length; }   /* lógica v13 */
-  else { fin=rs.filter(r=>r.fin&&hastaT(r.fin,T)).length;
-         lleg=rs.filter(r=>(r.inicio&&hastaT(r.inicio,T))||(r.fin&&hastaT(r.fin,T))).length; }
+  else { fin=rs.filter(r=>r.fin&&hastaDia(r.fin,T)).length;          /* v19: hora del día D */
+         lleg=rs.filter(r=>(r.inicio&&hastaDia(r.inicio,T))||(r.fin&&hastaDia(r.fin,T))).length; }
   return {tot:rs.length, fin, carga:lleg-fin, pend:rs.length-lleg};
 }
 /* Control Pallets guarda las empresas como milkaut_bultos, citric_bultos… (igual que v13) */
 function palStats(rows,T){
   let bultos=0, n=0; const ctrls=new Set();
-  rows.forEach(r=>{ if(T!=null && !hastaT(r.hora_fin,T)) return; n++;
+  rows.forEach(r=>{ if(T!=null && !hastaPal(r.hora_fin,T)) return; n++;
     for(const k in r){ if(k.endsWith('_bultos')) bultos+=Number(r[k])||0; } if(r.ctrl) ctrls.add(r.ctrl); });
   return {bultos, rutas:n, ctrl:ctrls.size};
 }
@@ -900,7 +939,7 @@ function devStats(hrs,T){
   hrs.forEach(h=>{
     A.hojas++;
     let st=h.estado;
-    if(T!=null) st=(h.fin&&hastaT(h.fin,T))?'cerrada':(h.inicio&&hastaT(h.inicio,T))?'dock':'esperando';
+    if(T!=null) st=(h.fin&&hastaDia(h.fin,T))?'cerrada':(h.inicio&&hastaDia(h.inicio,T))?'dock':'esperando';   /* v19: hora del día D */
     if(st==='cerrada')A.cer++; else if(st==='dock')A.dock++; else A.esp++;
     if(T!=null && st!=='cerrada') return;        /* a una hora pasada solo cuentan las hojas ya cerradas */
     (h.pedidos||[]).forEach(p=>{
@@ -918,33 +957,33 @@ const pctTxt=(a,b)=>b>0? (a*100/b).toFixed(1).replace('.',',')+' %' : '—';
 /* qué jornadas de Pallets van con qué días.
    Consultas CDR: el control de la jornada X corresponde al despacho del día X+1. */
 function palFiltro(){
-  if(esVivo()) return new Set([ddmmaaaa(jornadaActualISO())]);
-  return new Set(rango().map(f=>ddmmaaaa(sumarDias(f,-1))));
+  return new Set(rango().map(f=>ddmmaaaa(sumarDias(f,-1))));   /* v19: también en vivo (despacho D ← jornada D-1) */
 }
 
 /* ── pintar ── */
 function setTxt(id,v){ const el=document.getElementById(id); if(el) el.textContent=v; }
 function pintarPeriodo(){
-  const hoy=hoyISO(), f=document.getElementById('fSel');
+  const hoy=despachoVivoISO(), f=document.getElementById('fSel');
   f.max=hoy; f.value=FSEL;
   document.querySelectorAll('#segModo button').forEach(b=>b.classList.toggle('on',b.dataset.m===MODO));
-  document.getElementById('btnHoy').disabled=esVivo();
+  document.getElementById('btnHoy').disabled=esDespachoVivo();
   document.getElementById('fNext').disabled = mover(1)>hoy;
   const tl={dia:['Día anterior','Día siguiente'],semana:['Semana anterior','Semana siguiente'],mes:['Mes anterior','Mes siguiente']}[MODO];
   document.getElementById('fPrev').setAttribute('aria-label',tl[0]); document.getElementById('fNext').setAttribute('aria-label',tl[1]);
   const fs=rango(), d0=fs[0], d1=fs[fs.length-1];
   let t;
-  if(MODO==='dia') t= FSEL===hoy ? 'Hoy, en vivo' : `Día ${ddmmaaaa(FSEL)} · jornada cerrada`;
-  else if(MODO==='semana') t=`Semana del ${ddmm(d0)} al ${ddmm(d1)}${d1===hoy?' (en curso)':''}`;
-  else t=`${MESES[dISO(FSEL).getMonth()].replace(/^./,c=>c.toUpperCase())} ${dISO(FSEL).getFullYear()} · ${fs.length} días`;
+  if(MODO==='dia') t= esVivo() ? `Despacho ${ddmm(FSEL)} · en vivo` : `Despacho ${ddmmaaaa(FSEL)}`;
+  else if(MODO==='semana') t=`Despachos del ${ddmm(d0)} al ${ddmm(d1)}${d1===hoy?' (en curso)':''}`;
+  else t=`Despachos de ${MESES[dISO(FSEL).getMonth()]} ${dISO(FSEL).getFullYear()} · ${fs.length} días`;
   setTxt('rangoTxt',t);
   const pj=[...palFiltro()];
   setTxt('jornadaTxt', pj.length===1? `jornada ${pj[0]}` : `jornadas ${pj[0].slice(0,5)} → ${pj[pj.length-1].slice(0,5)}`);
   document.getElementById('secJor').classList.toggle('hidden',MODO!=='dia');
   setTxt('kFaltaLbl', esVivo()? 'Faltan salir' : 'Sin cerrar');
-  const lbl = MODO==='dia' ? (FSEL===hoy?'hoy':ddmmaaaa(FSEL)) : (MODO==='semana'?'la semana':'el mes');
+  const lbl = MODO==='dia' ? 'despacho '+ddmm(FSEL) : (MODO==='semana'?'la semana':'el mes');
   setTxt('ringSub','Expedición CDR · '+lbl); setTxt('devSub','medido en pedidos · '+lbl);
-  setTxt('palSub', MODO==='dia'? (esVivo()?'jornada en curso, corte 14:30':'jornada que preparó ese despacho') : 'jornadas que prepararon esos despachos');
+  setTxt('palSub', MODO==='dia'? (esDespachoVivo()?'jornada en curso, corte 14:30':'jornada que preparó ese despacho') : 'jornadas que prepararon esos despachos');
+  if(MODO==='dia') pintarEscala();
   setLive();
 }
 
@@ -976,42 +1015,60 @@ function pintarTop(id,obj){
   el.innerHTML=L.map(([k,v])=>`<div class="r"><span title="${esc(k)}">${esc(k)}</span><div class="bar"><i style="width:${(v*100/max).toFixed(1)}%"></i></div><b>${miles(v)}</b></div>`).join('');
 }
 
-/* ── avance de la jornada: arrastrable ── */
+/* ── avance del despacho: arrastrable (v19) ── */
+const TICKS=[[0,'14:30'],[210,'18:00'],[450,'22:00'],[570,'00:00'],[750,'03:00'],[930,'06:00'],[1110,'09:00'],[1290,'12:00'],[1440,'14:30'],[1650,'18:00']];
+function pintarEscala(){
+  const d0=ddmm(sumarDias(FSEL,-1)), d1=ddmm(FSEL);
+  document.getElementById('jorTicks').innerHTML=TICKS.map(([t,h],i)=>{
+    const cls=(i===0?'ini':(i===TICKS.length-1?'fin':''))+((t===0||t===T_MN)?' dia':'');
+    const txt=h+(t===0?' '+d0:(t===T_MN?' '+d1:''));
+    return `<span class="${cls}" style="left:${(t/JMAX*100).toFixed(2)}%">${txt}</span>`;
+  }).join('');
+  setTxt('fzPal',`Control Pallets · jornada ${d0} · 14:30 → 14:30`);
+  setTxt('fzExp',`Expedición · ${d1} · desde 00:00`);
+  setTxt('fzDev',`Devoluciones · ${d1} · 09:00 → 18:00`);
+}
 function pintarJornada(){
   const vivo=esVivo(), now=ahoraT();
-  const tope= vivo? now : 1440;
-  const T= TSEL==null? tope : TSEL;
-  const pos=(T/1440*100).toFixed(2)+'%';
+  const tope= vivo? now : JMAX;
+  const T= TSEL==null? tope : Math.min(TSEL,tope);
+  const pc=t=>(t/JMAX*100).toFixed(2)+'%';
   const fill=document.getElementById('jorFill'), mk=document.getElementById('jorMk'), rg=document.getElementById('jorRange');
-  fill.style.width=pos; document.getElementById('jorDot').style.left=pos;
+  fill.style.width=pc(T); document.getElementById('jorDot').style.left=pc(T);
   fill.classList.toggle('past', TSEL!=null);
-  mk.classList.toggle('hidden', !(vivo && TSEL!=null)); mk.style.left=(now/1440*100).toFixed(2)+'%';
-  rg.value=T; rg.setAttribute('aria-valuetext', hhmmDeT(T));
+  mk.classList.toggle('hidden', !(vivo && TSEL!=null)); mk.style.left=pc(now);
+  rg.value=T; rg.setAttribute('aria-valuetext', fechaDeT(T)+' '+hhmmDeT(T));
   const box=document.getElementById('jorNow');
   if(TSEL==null && vivo){
-    const falta=1440-now, fh=Math.floor(falta/60), fm=falta%60;
-    box.innerHTML=`Ahora <b>${hhmmDeT(now)}</b> · faltan ${fh} h ${p2(fm)} min para el corte de las 14:30`;
+    const meta= now<T_CORTE? T_CORTE : JMAX, hito= now<T_CORTE? 'el corte de Pallets (14:30)' : 'el cierre de Devoluciones (18:00)';
+    const falta=meta-now, fh=Math.floor(falta/60), fm=falta%60;
+    box.innerHTML=`Ahora <b>${hhmmDeT(now)}</b> · faltan ${fh} h ${p2(fm)} min para ${hito}`;
   } else if(TSEL==null){
-    box.innerHTML=`Jornada completa del ${ddmmaaaa(FSEL)}`;
+    box.innerHTML=`Despacho completo del ${ddmmaaaa(FSEL)}`;
   } else {
-    box.innerHTML=`Viendo cómo estaba a las <b class="past">${hhmmDeT(TSEL)}</b> <button type="button" class="volver" id="btnVolver">${vivo?'Volver a ahora':'Ver el día completo'}</button>`;
+    box.innerHTML=`Viendo cómo estaba el ${fechaDeT(TSEL)} a las <b class="past">${hhmmDeT(TSEL)}</b> <button type="button" class="volver" id="btnVolver">${vivo?'Volver a ahora':'Ver el despacho completo'}</button>`;
     document.getElementById('btnVolver').onclick=()=>{ TSEL=null; render(); };
   }
 }
 document.getElementById('jorRange').addEventListener('input',e=>{
-  const v=Number(e.target.value), vivo=esVivo(), tope=vivo? ahoraT() : 1440;
+  const v=Number(e.target.value), vivo=esVivo(), tope=vivo? ahoraT() : JMAX;
   TSEL = (v>=tope-5) ? null : v;           /* llegar al final = volver a ahora */
   render();
 });
 setInterval(()=>{ if(MODO==='dia') pintarJornada(); },30000);
-/* si pasa la medianoche con el panel abierto, "hoy" cambia: se reengancha */
-let HOY_ACT=hoyISO();
-setInterval(()=>{ const h=hoyISO(); if(h!==HOY_ACT){ const eraVivo=(MODO==='dia'&&FSEL===HOY_ACT); HOY_ACT=h; pararVivo(); if(eraVivo){ FSEL=h; TSEL=null; } renderFecha(); cargar(); } },60000);
+/* a las 14:30 empieza el despacho siguiente; a las 18:00 se cierra el de hoy; a las 00:00 cambia la fecha */
+let DV_ACT=despachoVivoISO(), HOY_ACT=hoyISO();
+setInterval(()=>{
+  const dv=despachoVivoISO(), h=hoyISO();
+  if(dv!==DV_ACT){ const eraVivo=(MODO==='dia'&&FSEL===DV_ACT); DV_ACT=dv; HOY_ACT=h; if(eraVivo){ FSEL=dv; TSEL=null; } renderFecha(); cargar(); return; }
+  if(h!==HOY_ACT){ HOY_ACT=h; renderFecha(); cargar(); return; }
+  if(MODO==='dia'){ pintarPeriodo(); render(); }
+},60000);
 
 /* ── controles del período ── */
 document.querySelectorAll('#segModo button').forEach(b=>b.addEventListener('click',()=>{ MODO=b.dataset.m; TSEL=null; cargar(); }));
-document.getElementById('fSel').addEventListener('change',e=>{ const v=e.target.value; if(!v) return; FSEL= v>hoyISO()? hoyISO() : v; TSEL=null; cargar(); });
-document.getElementById('btnHoy').addEventListener('click',()=>{ MODO='dia'; FSEL=hoyISO(); TSEL=null; cargar(); });
+document.getElementById('fSel').addEventListener('change',e=>{ const v=e.target.value, dv=despachoVivoISO(); if(!v) return; FSEL= v>dv? dv : v; TSEL=null; cargar(); });
+document.getElementById('btnHoy').addEventListener('click',()=>{ MODO='dia'; FSEL=despachoVivoISO(); TSEL=null; cargar(); });
 /* v17: flechas ◀ ▶ — mueven un día, una semana o un mes según el modo */
 function mover(dir){
   if(MODO==='dia') return sumarDias(FSEL,dir);
@@ -1019,7 +1076,7 @@ function mover(dir){
   const d=dISO(FSEL); d.setDate(1); d.setMonth(d.getMonth()+dir); return fISO(d);
 }
 document.getElementById('fPrev').addEventListener('click',()=>{ FSEL=mover(-1); TSEL=null; cargar(); });
-document.getElementById('fNext').addEventListener('click',()=>{ const n=mover(1); if(n>hoyISO()) return; FSEL=n; TSEL=null; cargar(); });
+document.getElementById('fNext').addEventListener('click',()=>{ const n=mover(1); if(n>despachoVivoISO()) return; FSEL=n; TSEL=null; cargar(); });
 
 /* ═══ última actualización ═══ */
 function marcarUpd(){const d=new Date();setTxt('updTxt',`${p2(d.getDate())}/${p2(d.getMonth()+1)}/${d.getFullYear()} ${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`);}
