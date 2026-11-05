@@ -319,6 +319,38 @@
   .rdc .ids span{background:var(--card2);border:1px solid var(--bd);border-radius:3px;padding:3px 9px;font-size:13px;font-weight:700;color:var(--tx)}
   .rdc .msg{font-size:12.5px;font-weight:600;color:var(--tx3);margin-top:8px;line-height:1.5}
   @media(max-width:900px){ .rdc{grid-template-columns:1fr} .rdc .rlst{border-left:none;padding-left:0;border-top:1px solid var(--bd);padding-top:16px} }
+  /* ═══ v25 · panel Despacho ═══ */
+  .desp .st .v small{font-size:13px;font-weight:600;color:var(--tx2)}
+  .punt{margin-top:14px;background:var(--card);border:1px solid var(--bd);border-radius:4px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+  .punt .pt-top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;font-weight:700;color:var(--tx2)}
+  .punt .pt-bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--card2)}
+  .punt .pt-bar i{display:block;height:100%;width:0}
+  #ptOk{background:var(--acc)} #ptDem{background:var(--tx3)}
+  .punt .pt-cnt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .punt .pt-cnt>div{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .punt .pt-cnt b{font-size:22px;font-weight:800;color:var(--tx);line-height:1}
+  .punt .pt-cnt span{font-size:11.5px;font-weight:600;color:var(--tx2)}
+  .punt .sw{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .punt .sw.ok{background:var(--acc)} .punt .sw.de{background:var(--tx3)}
+  .punt .pt-nota{font-size:11px;color:var(--tx3);font-weight:500}
+  /* ═══ v26 · tres paneles del ciclo: Control → Salida → Devolución ═══ */
+  .row2.ciclo{grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch}
+  .row2.ciclo>.pnl{display:flex;flex-direction:column}
+  .row2.ciclo>.pnl>.bd{flex:1;padding:14px 16px}
+  .row2.ciclo .dev{gap:14px}
+  .row2.ciclo .dev .st{gap:8px}
+  .row2.ciclo .dev .st>div{padding:10px 11px;gap:5px;min-width:0}
+  .row2.ciclo .dev .st .k{font-size:11.5px;line-height:1.25}
+  .row2.ciclo .dev .st .v{font-size:22px}
+  .row2.ciclo .dev .st .s{font-size:11px;line-height:1.3}
+  .row2.ciclo .dev .tops{grid-template-columns:1fr;gap:14px;background:var(--card);border:1px solid var(--bd);border-radius:4px;padding:12px 14px;flex:1}
+  .row2.ciclo .top{gap:7px;font-size:12.5px}
+  .row2.ciclo .top .bar{height:6px} .row2.ciclo .top .bar i{height:6px}
+  .row2.ciclo .desp .punt{margin-top:0;flex:1}
+  .row2.ciclo .tops h3{font-size:12px;margin:0 0 8px}
+  .pnl>h2 .ti{display:inline-flex;align-items:center;gap:8px}
+  .pnl>h2 .paso{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1px solid var(--bd2);color:var(--tx2);font-size:11px;font-weight:700}
+  @media(max-width:1250px){ .row2.ciclo{grid-template-columns:1fr} }
   /* ═══ v22 · estilo sobrio: un solo color de marca, el resto en grises ═══ */
   .kpi,.kpi.red,.kpi.blu,.kpi.amb,.kpi.vio{border-top:3px solid var(--bd2)}
   .kpi:first-child{border-top-color:var(--acc)}
@@ -363,7 +395,7 @@
         <button type="button" class="lt on" data-t="noche">Noche</button>
       </div>
       <button id="loginBtn" class="login-enter">Ingresar</button>
-      <div class="login-ver">iFlow · CDR Nogués · v24</div>
+      <div class="login-ver">iFlow · CDR Nogués · v28</div>
     </div>
   </div>
 </div>
@@ -488,34 +520,51 @@
         <div class="kpi vio"><span class="k">Pedidos con devolución</span><span class="v num" id="devPedK">—</span><span class="s num"><span id="devPct">—</span> de <span id="devPedN2">—</span> pedidos</span></div>
       </section>
 
-      <div class="row2">
+      <div class="row2 ciclo">
+        <!-- v26: 1 · Control Pallets -->
         <section class="pnl">
-          <h2>Estado de rutas <small id="ringSub">Expedición CDR · hoy</small></h2>
-          <div class="bd ring">
-            <svg viewBox="0 0 160 160" role="img" aria-label="Estado de rutas de Expedición" id="ringSvg">
-              <g transform="rotate(-90 80 80)" fill="none" stroke-width="18">
-                <circle cx="80" cy="80" r="58" stroke="var(--card2)"></circle>
-                <circle id="ringFin" cx="80" cy="80" r="58" stroke="var(--acc)" stroke-dasharray="0 364.4"></circle>
-                <circle id="ringCarga" cx="80" cy="80" r="58" stroke="var(--tx3)" stroke-dasharray="0 364.4"></circle>
-                <circle id="ringPend" cx="80" cy="80" r="58" stroke="var(--bd2)" stroke-dasharray="0 364.4"></circle>
-              </g>
-              <text id="ringPct" x="80" y="80" text-anchor="middle" fill="var(--tx)" font-size="30" font-weight="800" font-family="Inter, sans-serif">—</text>
-              <text x="80" y="101" text-anchor="middle" fill="var(--tx2)" font-size="12" font-weight="600" font-family="Inter, sans-serif">despachado</text>
-            </svg>
-            <div class="lgd num">
-              <div><i style="background:var(--acc)"></i><span>Despachadas</span><b id="lgFin">—</b></div>
-              <div><i style="background:var(--tx3)"></i><span>En carga</span><b id="lgCarga">—</b></div>
-              <div><i style="background:var(--bd2)"></i><span>Sin iniciar</span><b id="lgPend">—</b></div>
+          <h2><span class="ti"><span class="paso">1</span>Control Pallets</span> <small id="cpSub">jornada</small></h2>
+          <div class="bd dev">
+            <div class="st num">
+              <div><span class="k">Pallets controlados</span><span class="v" id="cpPlt">—</span><span class="s" id="cpPltS">—</span></div>
+              <div><span class="k">Tiempo de control</span><span class="v"><span id="cpMin">—</span> <small>min</small></span><span class="s">por ruta, de inicio a fin</span></div>
+              <div><span class="k">Diferencias</span><span class="v" id="cpDif">—</span><span class="s" id="cpDifS">—</span></div>
+            </div>
+            <div class="tops">
+              <div><h3>Controladores · rutas</h3><div class="top num" id="cpCtrl"><div class="vacio">—</div></div></div>
+              <div><h3>Diferencias por preparador · unidades</h3><div class="top num" id="cpPrep"><div class="vacio">—</div></div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- v25: Despacho (datos de Expedición CDR, mismos cálculos que la app) -->
+        <section class="pnl">
+          <h2><span class="ti"><span class="paso">2</span>Despacho</span> <small id="ringSub">Expedición CDR · hoy</small></h2>
+          <div class="bd dev desp">
+            <div class="st num">
+              <div><span class="k">Pallets despachados</span><span class="v" id="dpPlt">—</span><span class="s" id="dpPltS">—</span></div>
+              <div><span class="k">Pallets por ruta</span><span class="v" id="dpProm">—</span><span class="s" id="dpPromS">—</span></div>
+              <div><span class="k">Promedio de carga</span><span class="v"><span id="dpCarga">—</span> <small>min</small></span><span class="s" id="dpCargaS">—</span></div>
+            </div>
+            <div class="punt num">
+              <div class="pt-top"><span>Llegada de camiones · tolerancia 20 min sobre la citación</span><span id="ptN">—</span></div>
+              <div class="pt-bar" role="img" id="ptBar" aria-label="Llegadas en hora y demoradas"><i id="ptOk"></i><i id="ptDem"></i></div>
+              <div class="pt-cnt">
+                <div><b id="ptPct">—</b><span>llegaron después de la tolerancia</span></div>
+                <div><b id="ptEnHora">—</b><span><i class="sw ok"></i>en hora</span></div>
+                <div><b id="ptDemN">—</b><span><i class="sw de"></i>demorados<span id="ptProm"></span></span></div>
+              </div>
+              <div class="pt-nota">Se mide la llegada entre las 02:00 y las 06:00, igual que en Expedición CDR.</div>
             </div>
           </div>
         </section>
 
         <!-- v16: resumen en vivo de Devoluciones -->
         <section class="pnl">
-          <h2>Devoluciones <small id="devSub">medido en pedidos · hoy</small></h2>
+          <h2><span class="ti"><span class="paso">3</span>Devoluciones</span> <small id="devSub">medido en pedidos · hoy</small></h2>
           <div class="bd dev">
             <div class="st num">
-              <div><span class="k">Hojas de ruta</span><span class="v" id="devHojas">—</span><span class="s"><span id="devCer">—</span> cerradas · <span id="devDock">—</span> en descarga · <span id="devEsp">—</span> esperando</span></div>
+              <div><span class="k">Rutas con devolución</span><span class="v" id="devRDev">—</span><span class="s">de <span id="devHojas">—</span> rutas</span></div>
               <div><span class="k">Pedidos con devolución</span><span class="v" id="devPed" style="color:var(--tx)">—</span><span class="s">de <span id="devPedN">—</span> pedidos recibidos</span></div>
               <div><span class="k">Total / parcial</span><span class="v"><span id="devTot">—</span> <span style="color:var(--tx3)">/</span> <span id="devPar">—</span></span><span class="s">volvió todo · volvió una parte</span></div>
             </div>
@@ -667,7 +716,7 @@
     <a class="mweb" id="mWeb" target="_blank" rel="noopener">o abrir en el navegador</a>
   </div>
 </div>
-<div class="version">v24 · rutas que faltan cerrar</div>
+<div class="version">v28 · rutas con devolución</div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════
@@ -904,7 +953,9 @@ function rango(){
 /* ── memoria de días cerrados (mismo criterio que Consultas CDR) ──
    Expedición y Devoluciones comparten las 50.000 lecturas diarias del plan gratis.
    Los días cerrados se guardan en esta PC; hoy y ayer se vuelven a pedir siempre. */
-const CACHE='panel_cache_v1', MAX_DIAS=70, FRESCO_TTL=10*60*1000;
+const CACHE='panel_cache_v2',   /* v25: la memoria ahora guarda pallets */
+     CACHE_V1='panel_cache_v1', MAX_DIAS=70, FRESCO_TTL=10*60*1000;
+try{ localStorage.removeItem(CACHE_V1); }catch(e){}   /* libera la memoria vieja */
 function leerCache(){ try{ const o=JSON.parse(localStorage.getItem(CACHE)||'null'); if(o&&o.v===1&&o.dias) return o; }catch(e){} return {v:1,dias:{}}; }
 function guardarCache(C){
   const ks=Object.keys(C.dias).sort().reverse(); const ok={}; ks.slice(0,MAX_DIAS).forEach(k=>ok[k]=C.dias[k]); C.dias=ok;
@@ -917,7 +968,8 @@ function infoCache(){ const el=document.getElementById('cacheInfo'); if(!el) ret
 function borrarMemoria(){ try{ localStorage.removeItem(CACHE); }catch(e){}
   Object.keys(EXP).forEach(k=>{ if(k!==SUBF){ delete EXP[k]; delete REC[k]; delete MEMAT[k]; } });
   infoCache(); cargar(); }
-const compExp=r=>({ruta:r.ruta, inicio:r.inicio||'', fin:r.fin||'', hcit:r.hcit||''});
+const compExp=r=>({ruta:r.ruta, inicio:r.inicio||'', fin:r.fin||'', hcit:r.hcit||'',
+  dArlog:+r.dArlog||0, dChep:+r.dChep||0, dDesc:+r.dDesc||0});   /* v25: pallets despachados por tipo */
 const compRec=h=>({hr:h.hr, estado:h.estado||'', inicio:h.inicio||'', fin:h.fin||'',
   pedidos:(h.pedidos||[]).map(p=>({est:p.est, bultos:p.bultos, dev:p.dev, motivo:p.motivo||'', boca:p.boca||''}))});
 
@@ -999,20 +1051,22 @@ function cadenaDe(boca){ const u=SIN_AC(boca);
   const m=/^\s*([^-]+?)\s*-/.exec(String(boca||'')); return SIN_AC(m? m[1] : boca)||'—'; }
 /* mismo cálculo que totPed / totDev de Devoluciones y Consultas */
 function devStats(hrs,T){
-  const A={hojas:0,cer:0,dock:0,esp:0,ped:0,tot:0,par:0,bul:0,bulDev:0,mot:{},cad:{}};
+  const A={hojas:0,rDev:0,cer:0,dock:0,esp:0,ped:0,tot:0,par:0,bul:0,bulDev:0,mot:{},cad:{}};
   hrs.forEach(h=>{
     A.hojas++;
     let st=h.estado;
     if(T!=null) st=(h.fin&&hasta('dev',h.fin,T))?'cerrada':(h.inicio&&hasta('dev',h.inicio,T))?'dock':'esperando';
     if(st==='cerrada')A.cer++; else if(st==='dock')A.dock++; else A.esp++;
     if(T!=null && st!=='cerrada') return;        /* a una hora pasada solo cuentan las hojas ya cerradas */
+    let conDev=false;   /* v28: rutas con al menos un pedido devuelto (total o parcial) */
     (h.pedidos||[]).forEach(p=>{
       A.ped++; A.bul+=n0(p.bultos); let d=0;
       if(p.est==='total'){ A.tot++; d=n0(p.dev||p.bultos); }
       else if(p.est==='parcial'){ A.par++; d=n0(p.dev); }
       if(p.est==='total'||p.est==='parcial'){ A.bulDev+=d; const mk=String(p.motivo||'').trim()||'sin motivo';
-        A.mot[mk]=(A.mot[mk]||0)+1; const c=cadenaDe(p.boca); A.cad[c]=(A.cad[c]||0)+1; }   /* v17: se cuentan pedidos */
+        A.mot[mk]=(A.mot[mk]||0)+1; const c=cadenaDe(p.boca); A.cad[c]=(A.cad[c]||0)+1; conDev=true; }   /* v17: se cuentan pedidos */
     });
+    if(conDev) A.rDev++;
   });
   return A;
 }
@@ -1044,7 +1098,10 @@ function pintarPeriodo(){
   setTxt('jornadaTxt', pj.length===1? `jornada ${pj[0]}` : `jornadas ${pj[0].slice(0,5)} → ${pj[pj.length-1].slice(0,5)}`);
   setTxt('kFaltaLbl', esVivo()? 'Faltan salir' : 'Sin cerrar');
   const lbl = MODO==='dia' ? 'salida del '+ddmm(despDe(FSEL)) : (MODO==='semana'?'la semana':'el mes');
-  setTxt('ringSub','Expedición CDR · '+lbl); setTxt('devSub','medido en pedidos · '+lbl);
+  const dsal= MODO==='dia'? ddmm(despDe(FSEL)) : null;
+  setTxt('cpSub', MODO==='dia'? 'jornada '+ddmm(FSEL) : lbl);
+  setTxt('ringSub', dsal? 'sale el '+dsal : lbl);
+  setTxt('devSub', dsal? 'vuelve el '+dsal+' · en pedidos' : 'en pedidos · '+lbl);
   setTxt('palSub', MODO==='dia'? `jornada ${ddmm(FSEL)} · sale el ${ddmm(despDe(FSEL))}` : 'jornadas del período');
   setLive();
 }
@@ -1057,25 +1114,53 @@ function render(){
   const E=expStats(rs,Tde('exp'));
   setTxt('expRutas',E.tot); setTxt('expFaltan',E.tot-E.fin); setTxt('expFin',E.fin);
   setRing(E.fin,E.carga,E.pend);
+  pintarDesp(despStats(rs,Tde('exp')));
 
   const P=palStats(prow,Tde('pal'));
+  pintarCP(palDetalle(prow,Tde('pal')));
   setTxt('palBultos',P.bultos.toLocaleString('es-AR')); setTxt('palRutas',P.rutas); setTxt('palCtrl',P.ctrl);
 
   const D=devStats(hrs,Tde('dev'));
   /* v17: devoluciones medidas en pedidos */
   setTxt('devPedK',D.tot+D.par); setTxt('devPct',pctTxt(D.tot+D.par,D.ped)); setTxt('devPedN2',miles(D.ped));
-  setTxt('devHojas',D.hojas); setTxt('devCer',D.cer); setTxt('devDock',D.dock); setTxt('devEsp',D.esp);
+  setTxt('devRDev',D.rDev); setTxt('devHojas',D.hojas);
   setTxt('devPed',D.tot+D.par); setTxt('devTot',D.tot); setTxt('devPar',D.par); setTxt('devPedN',miles(D.ped));
   pintarTop('devMot',D.mot); pintarTop('devCad',D.cad);
 
   pintarAvance();
   pintarRdc();
 }
-function pintarTop(id,obj){
-  const L=Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,4), el=document.getElementById(id);
-  if(!L.length){ el.innerHTML='<div class="vacio">Sin devoluciones en el período.</div>'; return; }
+function pintarTop(id,obj,vacio){
+  const L=Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,3), el=document.getElementById(id);
+  if(!L.length){ el.innerHTML=`<div class="vacio">${vacio||'Sin devoluciones en el período.'}</div>`; return; }
   const max=L[0][1];
   el.innerHTML=L.map(([k,v])=>`<div class="r"><span title="${esc(k)}">${esc(k)}</span><div class="bar"><i style="width:${(v*100/max).toFixed(1)}%"></i></div><b>${miles(v)}</b></div>`).join('');
+}
+
+/* ── v26: detalle de Control Pallets ──
+   PI = pallets de picking · SA = pallets completos (por empresa: milkaut_pi, milkaut_sa…)
+   diferencias = lista {emp, prep, cod, desc, cant} que carga el controlador */
+const dec2=x=>x.toFixed(2).replace('.',',');
+function palDetalle(rows,T){
+  let pi=0, sa=0, bul=0, dif=0, rDif=0; const mins=[], ctrl={}, prep={};
+  rows.forEach(r=>{ if(T!=null && !hasta('pal',r.hora_fin,T)) return;
+    for(const k in r){ if(k.endsWith('_pi')) pi+=Number(r[k])||0; else if(k.endsWith('_sa')) sa+=Number(r[k])||0; else if(k.endsWith('_bultos')) bul+=Number(r[k])||0; }
+    if(r.hora_ini && r.hora_fin){ const m=diffMin(r.hora_ini,r.hora_fin); if(m>=0 && m<720) mins.push(m); }
+    if(r.ctrl) ctrl[r.ctrl]=(ctrl[r.ctrl]||0)+1;
+    const ds=arr(r.diferencias); let u=0;
+    ds.forEach(d=>{ const c=Math.abs(Number(d&&d.cant)||0); u+=c; const p=String((d&&d.prep)||'').trim()||'Sin preparador'; prep[p]=(prep[p]||0)+c; });
+    if(ds.length) rDif++; dif+=u; });
+  return {pi, sa, bul, dif, rDif, ctrl, prep, min: mins.length? Math.round(mins.reduce((a,b)=>a+b,0)/mins.length) : null};
+}
+function pintarCP(C){
+  const tot=C.pi+C.sa, hay=Object.keys(C.ctrl).length>0;
+  setTxt('cpPlt', hay? miles(tot) : '—');
+  setTxt('cpPltS', hay? `${miles(C.pi)} de picking · ${miles(C.sa)} completos` : 'sin controles todavía');
+  setTxt('cpMin', C.min!=null? C.min : '—');
+  setTxt('cpDif', C.bul? dec2(C.dif*100/C.bul)+' %' : '—');
+  setTxt('cpDifS', C.dif? `${miles(C.dif)} unid. en ${C.rDif} ${C.rDif===1?'ruta':'rutas'}` : (hay? 'sin diferencias' : '—'));
+  pintarTop('cpCtrl', C.ctrl, 'Sin controles en el período.');
+  pintarTop('cpPrep', C.prep, 'Sin diferencias en el período.');
 }
 
 /* ── v23: rutas que faltan cerrar ──
@@ -1202,17 +1287,51 @@ document.getElementById('fNext').addEventListener('click',()=>{ const n=mover(1)
 /* ═══ última actualización ═══ */
 function marcarUpd(){const d=new Date();setTxt('updTxt',`${p2(d.getDate())}/${p2(d.getMonth()+1)}/${d.getFullYear()} ${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`);}
 
-/* ═══ anillo de estado de rutas ═══ */
-const RING_C=2*Math.PI*58;
+/* ═══ estado de rutas (para las tarjetas de arriba) ═══ */
 function setRing(fin,carga,pend){
-  const tot=fin+carga+pend;
-  const seg=[['ringFin',fin],['ringCarga',carga],['ringPend',pend]]; let off=0;
-  seg.forEach(([id,n])=>{const len=tot?n/tot*RING_C:0;const c=document.getElementById(id);c.setAttribute('stroke-dasharray',`${len} ${RING_C}`);c.setAttribute('stroke-dashoffset',String(-off));off+=len;});
-  const pct=tot?Math.round(fin/tot*100):0;
-  setTxt('ringPct',tot?pct+' %':'—'); setTxt('expPct',tot?pct+' %':'—');
-  setTxt('lgFin',fin); setTxt('lgCarga',carga); setTxt('lgPend',pend);
-  setTxt('expCarga',carga); setTxt('expPend',pend);
-  document.getElementById('ringSvg').setAttribute('aria-label',`${fin} despachadas, ${carga} en carga y ${pend} sin iniciar de ${tot} rutas`);
+  const tot=fin+carga+pend, pct=tot?Math.round(fin/tot*100):0;
+  setTxt('expPct',tot?pct+' %':'—'); setTxt('expCarga',carga); setTxt('expPend',pend);
+}
+
+/* ═══ v25 · DESPACHO — mismos cálculos que Expedición CDR ═══
+   pallets de una ruta = Arlog + Chep + Descartable · tiempo de carga = de inicio a fin
+   puntualidad: llegada (inicio) contra la citación, solo entre 02:00 y 06:00, tolerancia 20 min */
+const TOL_MIN=20, LG_K0=120+1440, LG_K1=360+1440+30;
+const esHoraOk=t=> !!t && /^\d{1,2}:\d{2}$/.test(String(t).trim());
+function tKey(t){ const m=hm(String(t).trim()); return m==null? null : (m<720? m+1440 : m); }
+function enVentana(t){ if(!esHoraOk(t)) return false; const k=tKey(t); return k>=LG_K0 && k<LG_K1; }
+function diffMin(a,b){ const x=hm(a), y=hm(b); if(x==null||y==null) return -1; let d=y-x; if(d<0) d+=1440; return d; }
+const totalD=r=>(+r.dArlog||0)+(+r.dChep||0)+(+r.dDesc||0);
+const dec1=x=>x.toFixed(1).replace('.',',');
+function despStats(rs,T){
+  const sale=rs.filter(r=>r.fin && (T==null || hasta('exp',r.fin,T)));
+  let plt=0, minT=0, pltT=0; const pv=[], mins=[];
+  sale.forEach(r=>{ const t=totalD(r); plt+=t; if(t>0) pv.push(t);
+    if(r.inicio){ const m=diffMin(r.inicio,r.fin); if(m>=0){ mins.push(m); if(t>0){ minT+=m; pltT+=t; } } } });
+  let ok=0, dem=0, sd=0;
+  rs.forEach(r=>{ if(!r.inicio || (T!=null && !hasta('exp',r.inicio,T))) return;
+    if(!enVentana(r.inicio) || !esHoraOk(r.hcit)) return;
+    const dv=tKey(r.inicio)-tKey(r.hcit); if(dv>TOL_MIN){ dem++; sd+=dv; } else ok++; });
+  return { plt, rutas:sale.length, conPlt:pv.length,
+    prom: pv.length? plt/pv.length : null, min: pv.length? Math.min(...pv) : null, max: pv.length? Math.max(...pv) : null,
+    carga: mins.length? Math.round(mins.reduce((a,b)=>a+b,0)/mins.length) : null,
+    porPlt: pltT? minT/pltT : null, ok, dem, demProm: dem? Math.round(sd/dem) : null };
+}
+function pintarDesp(D){
+  setTxt('dpPlt', D.rutas? miles(D.plt) : '—');
+  setTxt('dpPltS', D.rutas? `de ${D.rutas} ${D.rutas===1?'ruta que salió':'rutas que salieron'}` : 'todavía no salió ninguna ruta');
+  setTxt('dpProm', D.prom!=null? dec1(D.prom) : '—');
+  setTxt('dpPromS', D.prom!=null? `mín. ${D.min} · máx. ${D.max}` : 'sin pallets cargados');
+  setTxt('dpCarga', D.carga!=null? D.carga : '—');
+  setTxt('dpCargaS', D.porPlt!=null? `${dec1(D.porPlt)} min por pallet` : 'de inicio a fin de carga');
+  const n=D.ok+D.dem, pOk=n? D.ok/n*100 : 0;
+  setTxt('ptN', n? `${n} ${n===1?'llegó':'llegaron'}` : 'sin llegadas');
+  document.getElementById('ptOk').style.width=pOk.toFixed(1)+'%';
+  document.getElementById('ptDem').style.width=(n?100-pOk:0).toFixed(1)+'%';
+  setTxt('ptPct', n? Math.round(D.dem/n*100)+' %' : '—');
+  setTxt('ptEnHora', n? D.ok : '—'); setTxt('ptDemN', n? D.dem : '—');
+  setTxt('ptProm', D.demProm!=null? ` · ${D.demProm} min promedio` : '');
+  document.getElementById('ptBar').setAttribute('aria-label', n? `${D.ok} en hora y ${D.dem} demorados de ${n} llegadas` : 'sin llegadas');
 }
 
 /* ═══ FIREBASE (solo lectura) ═══ */
