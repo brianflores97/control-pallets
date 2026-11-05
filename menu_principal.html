@@ -395,7 +395,7 @@
         <button type="button" class="lt on" data-t="noche">Noche</button>
       </div>
       <button id="loginBtn" class="login-enter">Ingresar</button>
-      <div class="login-ver">iFlow · CDR Nogués · v28</div>
+      <div class="login-ver">iFlow · CDR Nogués · v29</div>
     </div>
   </div>
 </div>
@@ -479,9 +479,9 @@
   <main class="main">
     <!-- INFORMATIVA -->
     <div id="view-informativa" class="view">
-      <section class="rdc" id="secRdc" aria-label="Rutas que faltan cerrar">
+      <section class="rdc" id="secRdc" aria-label="Rutas mayoristas que faltan cerrar">
         <div class="rm">
-          <span class="rk">Rutas que faltan cerrar · <span id="rdcJor">—</span></span>
+          <span class="rk">Rutas mayoristas que faltan cerrar · <span id="rdcJor">—</span></span>
           <span class="rv num" id="rdcPend">—</span>
           <span class="rs num" id="rdcSub">—</span>
           <div class="rb"><i id="rdcFill"></i></div>
@@ -716,7 +716,7 @@
     <a class="mweb" id="mWeb" target="_blank" rel="noopener">o abrir en el navegador</a>
   </div>
 </div>
-<div class="version">v28 · rutas con devolución</div>
+<div class="version">v29 · rutas mayoristas</div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════
@@ -1178,7 +1178,7 @@ function pintarRdc(){
   if(!ids.length){
     sec.classList.remove('ok');
     setTxt('rdcPend','—'); setTxt('rdcN','');
-    setTxt('rdcSub', esVivo()? 'Todavía no se cargó la lista de rutas en Control Pallets.' : 'Control Pallets guarda la lista solo para la jornada en curso.');
+    setTxt('rdcSub', esVivo()? 'Todavía no se cargó la lista de rutas mayoristas en Control Pallets.' : 'Control Pallets guarda la lista solo para la jornada en curso.');
     document.getElementById('rdcFill').style.width='0';
     lst.innerHTML=''; return;
   }
@@ -1187,11 +1187,11 @@ function pintarRdc(){
                     .map(r=>String(r.id_ruta).trim()));
   const pend=ids.filter(id=>!reg.has(id)&&!man.has(id)), cer=ids.length-pend.length, pct=Math.round(cer*100/ids.length);
   setTxt('rdcPend',pend.length);
-  setTxt('rdcSub',`de ${ids.length} rutas · ${cer} cerradas · ${pct} %`+(T!=null? ` · a las ${hhmmA(TS.pal)}` : ''));
+  setTxt('rdcSub',`de ${ids.length} rutas mayoristas · ${cer} cerradas · ${pct} %`+(T!=null? ` · a las ${hhmmA(TS.pal)}` : ''));
   document.getElementById('rdcFill').style.width=pct+'%';
   sec.classList.toggle('ok',pend.length===0);
   setTxt('rdcN', pend.length? `(${pend.length})` : '');
-  lst.innerHTML= pend.length? pend.map(id=>`<span>${esc(id)}</span>`).join('') : '<div class="msg">Todas las rutas de la jornada están cerradas.</div>';
+  lst.innerHTML= pend.length? pend.map(id=>`<span>${esc(id)}</span>`).join('') : '<div class="msg">Todas las rutas mayoristas de la jornada están cerradas.</div>';
 }
 
 /* ── v21: avance general + una franja por app ── */
