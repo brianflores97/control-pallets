@@ -305,6 +305,20 @@
     .infobar .f.r{margin-left:0}
   }
   @media(prefers-reduced-motion:reduce){ .live.ok .d{animation:none} }
+  /* ═══ v23 · rutas que faltan cerrar (lista del día de Control Pallets) ═══ */
+  .rdc{background:var(--panel);border:1px solid var(--bd);border-left:3px solid var(--bd2);border-radius:6px;padding:12px 18px;display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:20px;align-items:center}
+  .rdc.ok{border-left-color:var(--acc)}
+  .rdc .rm,.rdc .rlst{display:flex;flex-direction:column;min-width:0}
+  .rdc .rk{font-size:12.5px;font-weight:700;color:var(--tx2)}
+  .rdc .rv{font-size:40px;font-weight:800;line-height:1;letter-spacing:-1px;color:var(--tx);margin:6px 0 4px}
+  .rdc .rs{font-size:12.5px;font-weight:600;color:var(--tx2)}
+  .rdc .rb{height:5px;background:var(--card2);border-radius:99px;margin-top:8px;overflow:hidden}
+  .rdc .rb i{display:block;height:100%;width:0;background:var(--acc);border-radius:99px}
+  .rdc .rlst{border-left:1px solid var(--bd);padding-left:20px;align-self:stretch}
+  .rdc .ids{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:64px;overflow:auto;align-content:flex-start}
+  .rdc .ids span{background:var(--card2);border:1px solid var(--bd);border-radius:3px;padding:3px 9px;font-size:13px;font-weight:700;color:var(--tx)}
+  .rdc .msg{font-size:12.5px;font-weight:600;color:var(--tx3);margin-top:8px;line-height:1.5}
+  @media(max-width:900px){ .rdc{grid-template-columns:1fr} .rdc .rlst{border-left:none;padding-left:0;border-top:1px solid var(--bd);padding-top:16px} }
   /* ═══ v22 · estilo sobrio: un solo color de marca, el resto en grises ═══ */
   .kpi,.kpi.red,.kpi.blu,.kpi.amb,.kpi.vio{border-top:3px solid var(--bd2)}
   .kpi:first-child{border-top-color:var(--acc)}
@@ -349,7 +363,7 @@
         <button type="button" class="lt on" data-t="noche">Noche</button>
       </div>
       <button id="loginBtn" class="login-enter">Ingresar</button>
-      <div class="login-ver">iFlow · CDR Nogués · v22</div>
+      <div class="login-ver">iFlow · CDR Nogués · v24</div>
     </div>
   </div>
 </div>
@@ -433,6 +447,19 @@
   <main class="main">
     <!-- INFORMATIVA -->
     <div id="view-informativa" class="view">
+      <section class="rdc" id="secRdc" aria-label="Rutas que faltan cerrar">
+        <div class="rm">
+          <span class="rk">Rutas que faltan cerrar · <span id="rdcJor">—</span></span>
+          <span class="rv num" id="rdcPend">—</span>
+          <span class="rs num" id="rdcSub">—</span>
+          <div class="rb"><i id="rdcFill"></i></div>
+        </div>
+        <div class="rlst">
+          <span class="rk">Pendientes <span class="num" id="rdcN"></span></span>
+          <div class="ids num" id="rdcIds"></div>
+        </div>
+      </section>
+
       <section class="jor" id="secJor" aria-label="Avance de cada app">
         <div class="hd">
           <h2>Avance del ciclo<small>se controla en la jornada, sale en la madrugada siguiente y vuelve ese día</small></h2>
@@ -640,7 +667,7 @@
     <a class="mweb" id="mWeb" target="_blank" rel="noopener">o abrir en el navegador</a>
   </div>
 </div>
-<div class="version">v22 · ciclo y estilo sobrio</div>
+<div class="version">v24 · rutas que faltan cerrar</div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════
@@ -1042,12 +1069,44 @@ function render(){
   pintarTop('devMot',D.mot); pintarTop('devCad',D.cad);
 
   pintarAvance();
+  pintarRdc();
 }
 function pintarTop(id,obj){
   const L=Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,4), el=document.getElementById(id);
   if(!L.length){ el.innerHTML='<div class="vacio">Sin devoluciones en el período.</div>'; return; }
   const max=L[0][1];
   el.innerHTML=L.map(([k,v])=>`<div class="r"><span title="${esc(k)}">${esc(k)}</span><div class="bar"><i style="width:${(v*100/max).toFixed(1)}%"></i></div><b>${miles(v)}</b></div>`).join('');
+}
+
+/* ── v23: rutas que faltan cerrar ──
+   Lista que carga el supervisor en Control Pallets (Realtime DB config/rdc_lista = {fecha, ids, manuales}).
+   Mismo cálculo que la app: cerrada = tiene registro con inicio y fin, o la cerró a mano el supervisor.
+   Control Pallets guarda una sola lista, la de la jornada en curso. */
+let RDC=null;
+const arr=v=> Array.isArray(v)? v : (v&&typeof v==='object'? Object.values(v) : []);
+function pintarRdc(){
+  const sec=document.getElementById('secRdc'); if(!sec) return;
+  sec.classList.toggle('hidden',MODO!=='dia'); if(MODO!=='dia') return;
+  const jor=ddmmaaaa(FSEL), ids=(RDC&&RDC.fecha===jor)? arr(RDC.ids).map(x=>String(x).trim()).filter(Boolean) : [];
+  setTxt('rdcJor','jornada '+ddmm(FSEL));
+  const lst=document.getElementById('rdcIds');
+  if(!ids.length){
+    sec.classList.remove('ok');
+    setTxt('rdcPend','—'); setTxt('rdcN','');
+    setTxt('rdcSub', esVivo()? 'Todavía no se cargó la lista de rutas en Control Pallets.' : 'Control Pallets guarda la lista solo para la jornada en curso.');
+    document.getElementById('rdcFill').style.width='0';
+    lst.innerHTML=''; return;
+  }
+  const man=new Set(arr(RDC.manuales).map(x=>String(x).trim())), T=Tde('pal');
+  const reg=new Set(PAL_ALL.filter(r=>r.hora_ini&&r.hora_fin&&(T==null||(r.fecha===jor&&hasta('pal',r.hora_fin,T))))
+                    .map(r=>String(r.id_ruta).trim()));
+  const pend=ids.filter(id=>!reg.has(id)&&!man.has(id)), cer=ids.length-pend.length, pct=Math.round(cer*100/ids.length);
+  setTxt('rdcPend',pend.length);
+  setTxt('rdcSub',`de ${ids.length} rutas · ${cer} cerradas · ${pct} %`+(T!=null? ` · a las ${hhmmA(TS.pal)}` : ''));
+  document.getElementById('rdcFill').style.width=pct+'%';
+  sec.classList.toggle('ok',pend.length===0);
+  setTxt('rdcN', pend.length? `(${pend.length})` : '');
+  lst.innerHTML= pend.length? pend.map(id=>`<span>${esc(id)}</span>`).join('') : '<div class="msg">Todas las rutas de la jornada están cerradas.</div>';
 }
 
 /* ── v21: avance general + una franja por app ── */
@@ -1173,6 +1232,7 @@ try{
 /* Pallets — Realtime DB registros (se guarda todo y se filtra por jornada en render) */
 try{
   const appP=firebase.initializeApp(palCfg,'pal'); const RDB=appP.database();
+  RDB.ref('config/rdc_lista').on('value',snap=>{ RDC=snap.exists()? snap.val() : null; render(); }, e=>console.warn('rdc',e));
   RDB.ref('registros').on('value',snap=>{
     PAL_ALL=snap.exists()?Object.values(snap.val()):[];
     okPal=true; setLive(); marcarUpd(); render();
